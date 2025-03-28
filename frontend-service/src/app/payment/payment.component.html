@@ -1,0 +1,181 @@
+<div class="container mt-4">
+  <h5 class="mb-3">Checkout</h5>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="isLoading" class="alert d-flex bg-black bg-opacity-10 justify-content-center align-items-center">
+    <mat-progress-spinner mode="indeterminate" color="primary"></mat-progress-spinner>
+  </div>
+
+  <form [formGroup]="paymentForm" (ngSubmit)="proceedToPayment()">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="row">
+          <div class="mb-3 col-md-6">
+            <div class="card-header">
+              <h6 class="mb-0">Delivery Type</h6>
+            </div>
+            <div class="card-body">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" formControlName="deliveryType" id="standardDelivery" value="NORMAL">
+                <label class="form-check-label" for="standardDelivery">
+                  Standard Delivery (3-5 days) - Free
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" formControlName="deliveryType" id="expressDelivery" value="EXPRESS">
+                <label class="form-check-label" for="expressDelivery">
+                  Express Delivery (1-2 days) - €10.00
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3 col-md-6">
+            <div class="card-header">
+              <h6 class="mb-0">Payment Method</h6>
+            </div>
+            <div class="card-body">
+              <div *ngFor="let method of paymentMethods" class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  formControlName="paymentMethod"
+                  [id]="method.id"
+                  [value]="method.id"
+                />
+                <label class="form-check-label" [for]="method.id">
+                  <fa-icon [icon]="method.icon" class="me-2"></fa-icon>
+                  {{ method.label }}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="card-header">
+            <h6 class="mb-0">Billing Details</h6>
+          </div>
+          <div class="card-body">
+            <div *ngIf="errorFormMessage" class="alert alert-danger">
+              {{ errorFormMessage }}
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-2">
+                <label for="firstName" class="form-label">First Name</label>
+                <input type="text" class="form-control" id="firstName" formControlName="firstName">
+                <div *ngIf="paymentForm.get('firstName')?.invalid && (paymentForm.get('firstName')?.touched)" class="text-danger small">
+                  First Name is required.
+                </div>
+              </div>
+              <div class="col-md-6 mb-2">
+                <label for="lastName" class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="lastName" formControlName="lastName">
+                <div *ngIf="paymentForm.get('lastName')?.invalid && (paymentForm.get('lastName')?.touched)" class="text-danger small">
+                  Last Name is required.
+                </div>
+              </div>
+              <div class="col-12 mb-2">
+                <label for="address" class="form-label">Address</label>
+                <input type="text" class="form-control" id="address" formControlName="address">
+                <div *ngIf="paymentForm.get('address')?.invalid && (paymentForm.get('address')?.touched)" class="text-danger small">
+                  Address is required.
+                </div>
+              </div>
+              <div class="col-md-6 mb-2">
+                <label for="city" class="form-label">City</label>
+                <input type="text" class="form-control" id="city" formControlName="city">
+                <div *ngIf="paymentForm.get('city')?.invalid && (paymentForm.get('city')?.touched)" class="text-danger small">
+                  City is required.
+                </div>
+              </div>
+              <div class="col-md-6 mb-2">
+                <label for="zipCode" class="form-label">Zip Code</label>
+                <input type="text" class="form-control" id="zipCode" formControlName="zipCode">
+                <div *ngIf="paymentForm.get('zipCode')?.invalid && (paymentForm.get('zipCode')?.touched)" class="text-danger small">
+                  Zip Code is required.
+                </div>
+              </div>
+              <div class="col-12 mb-2">
+                <label for="country" class="form-label">Country</label>
+                <input type="text" class="form-control" id="country" formControlName="country">
+                <div *ngIf="paymentForm.get('country')?.invalid && (paymentForm.get('country')?.touched)" class="text-danger small">
+                  Country is required.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="order-summary">
+          <div class="card-header">
+            <h6 class="mb-0">Order Summary</h6>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-1">
+              <span>Subtotal</span>
+              <span>{{ price | currency:'EUR' }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span>Shipping</span>
+              <span>{{ deliveryType === 'EXPRESS' ? '€10.00' : 'Free' }}</span>
+            </div>
+            <hr class="my-2">
+            <div class="d-flex justify-content-between mb-2">
+              <strong>Total</strong>
+              <strong>{{ priceWithDelivery | currency:'EUR' }}</strong>
+            </div>
+            <button type="button" class="btn btn-outline-secondary mb-2 w-100" routerLink="/cart" [disabled]="isLoading">
+              Back to Cart
+            </button>
+            <button type="button" (click)="pay()" class="btn btn-success w-100" [disabled]="isLoading">
+              Complete Purchase
+            </button>
+            <div class="alert bg-warning text-center bg-opacity-10 mt-3">
+              <strong>YOU HAVE 30 MINUTES TO FINISH PAYMENT</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+<ng-template #confirmationModal let-modal>
+  <div class="modal-header" [ngClass]="{'is-dark-mode': isDarkMode}">
+    <h5 class="modal-title">Confirm Your Order</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body" [ngClass]="{'is-dark-mode': isDarkMode}">
+    <h6>Order Summary</h6>
+    <div class="d-flex justify-content-between mb-1">
+      <span>Subtotal:</span>
+      <span>{{ price | currency:'EUR' }}</span>
+    </div>
+    <div class="d-flex justify-content-between mb-1">
+      <span>Shipping:</span>
+      <span>{{ deliveryType === 'EXPRESS' ? '€10.00' : 'Free' }}</span>
+    </div>
+    <hr class="my-2">
+    <div class="d-flex justify-content-between mb-2">
+      <strong>Total:</strong>
+      <strong>{{ priceWithDelivery | currency:'EUR' }}</strong>
+    </div>
+
+    <h6 class="mt-3">Billing Details</h6>
+    <p><strong>Name:</strong> {{ paymentForm.value.firstName }} {{ paymentForm.value.lastName }}</p>
+    <p><strong>Address:</strong> {{ paymentForm.value.address }}, {{ paymentForm.value.city }}, {{ paymentForm.value.zipCode }}, {{ paymentForm.value.country }}</p>
+
+    <p class="text-bg-warning w-100 rounded-2 text-center">Are you sure you want to proceed with this order?</p>
+  </div>
+  <div class="modal-footer" [ngClass]="{'is-dark-mode': isDarkMode}">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancel</button>
+    <button type="button" class="btn btn-success" (click)="confirmPayment(modal)">Confirm</button>
+  </div>
+</ng-template>

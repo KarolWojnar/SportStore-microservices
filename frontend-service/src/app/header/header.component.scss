@@ -1,0 +1,41 @@
+.navbar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.nav-link {
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  right: 0;
+  left: auto;
+}
+
+.cart-link {
+  position: relative;
+}
+
+.cart-dot {
+  position: absolute;
+  top: 7px;
+  left: 22px;
+  width: 6px;
+  height: 6px;
+  background-color: red;
+  border-radius: 50%;
+  transform: translate(50%, -50%);
+}
+
+.img-logo {
+  transition: transform 0.5s;
+  height: 50px;
+  &:hover {
+    -webkit-transform: scaleX(-1);
+    transform: scaleX(-1);
+  }
+}

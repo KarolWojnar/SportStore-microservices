@@ -1,0 +1,97 @@
+<div class="container">
+  <div class="d-flex justify-content-between">
+    <h4 class="mb-4"><a routerLink="/admin" class="text-reset">Admin</a> → Users</h4>
+    <div class="d-flex justify-content-end align-items-center gap-2">
+      <button [ngClass]="['btn btn-sm rounded-2', role === 'ROLE_ADMIN' ? 'btn-danger' : 'btn-outline-secondary']"
+              (click)="toggleRole('ROLE_ADMIN')">
+        Admin
+      </button>
+      <button [ngClass]="['btn btn-sm rounded-2', role === 'ROLE_CUSTOMER' ? 'btn-info' : 'btn-outline-secondary']"
+              (click)="toggleRole('ROLE_CUSTOMER')">
+        Customer
+      </button>
+      <button [ngClass]="['btn btn-sm rounded-2', enabled === true ? 'btn-success' : 'btn-outline-secondary']"
+              (click)="toggleActivationStatus(true)">
+        Active
+      </button>
+      <button [ngClass]="['btn btn-sm rounded-2', enabled === false ? 'btn-warning' : 'btn-outline-secondary']"
+              (click)="toggleActivationStatus(false)">
+        Inactive
+      </button>
+      <div class="col-md-3">
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Search..."
+          [(ngModel)]="search"
+          (input)="onSearch()"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading && users.length === 0" class="d-flex justify-content-center align-items-center" style="height: 200px;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger mt-2">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="!isLoading && users.length === 0" class="alert alert-info">
+    No users found.
+  </div>
+
+  <div *ngIf="users.length > 0" class="list-group">
+    <div *ngFor="let user of users; let last = last" class="user-card px-2 py-1 border-2 mb-3 shadow rounded-3">
+      <div class="d-flex justify-content-between">
+        <div>
+          <p class="mb-1">User ID: {{ user.id }}</p>
+          <small>Email: {{ user.email }}</small><br>
+          <small>Name:
+            <span *ngIf="user.firstName || user.lastName"> {{ user.firstName }} {{ user.lastName }}</span>
+            <span *ngIf="!user.firstName && !user.lastName"> N/A</span>
+          </small>
+        </div>
+        <div class="d-flex flex-column align-items-end gap-1">
+          <small class="rounded-4 px-2" [ngClass]="getRoleClass(user.role)" style="font-size: 0.8rem; font-weight: bold;">
+            {{ user.role }}
+          </small>
+          <small class="rounded-4 px-2"
+                 [ngClass]="{'text-bg-warning': !user.enabled, 'text-bg-info': user.enabled}"
+                 style="font-size: 0.8rem; font-weight: bold;">
+            {{ user.enabled ? 'Active' : 'Inactive' }}
+          </small>
+        </div>
+      </div>
+      <div class="d-flex justify-content-between">
+        <div class="mt-2">
+          <p class="mb-1">
+            <strong>Address:</strong>
+            <span *ngIf="user.shippingAddress">
+              {{ user.shippingAddress.address }}, {{ user.shippingAddress.city }}, {{ user.shippingAddress.zipCode }}, {{ user.shippingAddress.country }}
+            </span>
+            <span *ngIf="!user.shippingAddress">N/A</span>
+          </p>
+        </div>
+        <div class="d-flex justify-content-end align-items-center gap-2">
+          <button *ngIf="user.role === 'ROLE_CUSTOMER'" class="btn btn-primary btn-sm rounded-2"
+                  (click)="setAsAdmin(user.id)">Set Admin</button>
+          <button *ngIf="user.enabled" class="btn btn-warning btn-sm rounded-2"
+          (click)="setActivation(user.id, !user.enabled)">Deactivate</button>
+          <button *ngIf="!user.enabled" class="btn btn-success btn-sm rounded-2"
+          (click)="setActivation(user.id, !user.enabled)">Activate</button>
+        </div>
+      </div>
+      <div #lastUserElement *ngIf="last"></div>
+    </div>
+
+    <div *ngIf="isLoadingNextData" class="d-flex justify-content-center my-3">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading more...</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,81 @@
+.rating {
+  display: flex;
+  align-items: center;
+}
+
+.rating fa-icon {
+  font-size: 1.2rem;
+  transition: color 0.2s;
+}
+
+.rating fa-icon.text-warning {
+  color: #ffc107;
+}
+
+.rating fa-icon.text-secondary {
+  color: #ccc;
+}
+
+.order-details {
+  .border {
+    border: 1px solid #ddd !important;
+    border-radius: 8px;
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  h4 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    margin-bottom: 0.5rem;
+  }
+
+  .badge {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+    margin-left: 2px;
+    border-radius: 20px;
+  }
+
+  .img-fluid {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+
+  .created {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .processing {
+    background-color: #ffc107;
+    color: black;
+  }
+
+  .shipping {
+    background-color: #17a2b8;
+    color: white;
+  }
+
+  .delivered {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .annulled {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .returned {
+    background-color: #6c757d;
+    color: white;
+  }
+}

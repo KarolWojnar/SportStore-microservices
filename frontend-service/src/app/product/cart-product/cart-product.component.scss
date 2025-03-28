@@ -1,0 +1,84 @@
+.card-view {
+  transition: transform 0.2s;
+  padding: 10px;
+  background-color: rgba(176, 176, 248, 0.12);
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  &:hover .add-to-cart-btn {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.product-image-container {
+  position: relative;
+}
+
+.product-rating {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  z-index: 1;
+}
+
+.add-to-cart-btn {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+.card-img {
+  height: 200px;
+  width: 100%;
+  object-fit: contain;
+  background-color: rgba(128, 128, 128, 0.15);
+  border-radius: 15px;
+}
+
+.badge {
+  font-size: 0.9em;
+}
+
+.form-check {
+  margin-bottom: 0.5rem;
+  .form-check-input {
+    margin-top: 0.2rem;
+    cursor: pointer;
+  }
+  .form-check-label {
+    margin-left: 0.5rem;
+    cursor: pointer;
+  }
+}
+
+.btn-outline-secondary {
+  margin-bottom: 1rem;
+}
+
+.btn-link {
+  text-decoration: none;
+  &:hover {
+    text-decoration: none;
+  }
+}
+
