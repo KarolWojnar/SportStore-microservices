@@ -15,6 +15,14 @@ spring:
     loadbalancer:
       enabled: true
 
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.loadbalancer: DEBUG
+    org.springframework.security: DEBUG
+    com.netflix.discovery: DEBUG
+    com.shop.apigateway: DEBUG
+
 jwt:
   secret: ${JWT_SECRET}
   exp: 3600000
@@ -29,7 +37,7 @@ eureka:
     service-url:
       defaultZone: http://eureka-server:8761/eureka/
   instance:
-    prefer-ip-address: false
+    prefer-ip-address: true
     hostname: ${spring.application.name}
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
