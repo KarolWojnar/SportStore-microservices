@@ -1,0 +1,30 @@
+spring:
+  security:
+    user:
+      name: root
+      password: root
+  application:
+    name: product-service
+  data:
+    mongodb:
+      authentication-database: admin
+      username: root
+      password: root
+      host: product-db
+      port: 27017
+      database: productDB
+  cloud:
+    loadbalancer:
+      enabled: true
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: ${spring.application.name}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
