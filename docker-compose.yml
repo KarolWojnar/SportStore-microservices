@@ -35,23 +35,6 @@ services:
     networks:
       - store-network
 
-  api-gateway:
-    container_name: api-gateway
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
-    env_file:
-      - /api-gateway/.env
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_REDIS_HOST: redis
-    depends_on:
-      - redis
-    networks:
-      - store-network
-
   frontend-service:
     build:
       context: ./frontend-service
@@ -64,6 +47,16 @@ services:
     networks:
       - store-network
 
+  eureka-server:
+    container_name: eureka-server
+    build:
+      context: ./eureka
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      - store-network
+
   customer-service:
     container_name: customer-service
     build:
@@ -72,14 +65,53 @@ services:
     ports:
       - "8081:8080"
     env_file:
-      - /customer-service/.env
+      - customer-service/.env
     depends_on:
+      eureka-server:
+        condition: service_started
       customer-db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     networks:
       - store-network
+
+  product-service:
+    container_name: product-service
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      product-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - store-network
+
+  product-db:
+    image: 'mongo:8.0.6'
+    container_name: product-db
+    environment:
+      - 'MONGO_INITDB_DATABASE=productDB'
+      - 'MONGO_INITDB_ROOT_PASSWORD=root'
+      - 'MONGO_INITDB_ROOT_USERNAME=root'
+    ports:
+      - '27017:27017'
+    volumes:
+      - product-db-data:/data/db
+      - ./product-service/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    networks:
+      - store-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ping:1})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   customer-db:
     image: mysql:8.3.0
@@ -114,10 +146,31 @@ services:
     networks:
       - store-network
 
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    env_file:
+      - api-gateway/.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      customer-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+    networks:
+      - store-network
+
 volumes:
   customer-db-data:
   redis-data:
+  product-db-data:
 
 networks:
   store-network:
     driver: bridge
+    name: store-network

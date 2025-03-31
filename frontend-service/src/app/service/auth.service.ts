@@ -15,11 +15,11 @@ export class AuthService {
               ) { }
 
   registerUser(user: UserDto) {
-    return this.httpClient.post(`${this.apiUrl}/users`, user);
+    return this.httpClient.post(`${this.apiUrl}/customers`, user);
   }
 
   updateCustomerInfo(user: CustomerDetails) {
-    return this.httpClient.put<{user: UserDetails}>(`${this.apiUrl}/users`, user);
+    return this.httpClient.put<{user: UserDetails}>(`${this.apiUrl}/customers`, user);
   }
 
   login(user: UserDto): Observable<any> {

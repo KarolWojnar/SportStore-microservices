@@ -1,11 +1,30 @@
 server:
   port: 8080
 
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.loadbalancer: DEBUG
+    com.netflix.discovery: DEBUG
+
 spring:
   application:
     name: api-gateway
   cloud:
+    loadbalancer:
+      retry:
+        enabled: true
+        max-retries-on-next-service-instance: 2
+        max-retries-on-same-service-instance: 1
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "GET,POST,PUT,DELETE,OPTIONS"
+            allowedHeaders: "*"
+            allowCredentials: false
+            maxAge: 3600
       discovery:
         locator:
           enabled: true
@@ -15,12 +34,24 @@ spring:
           uri: lb://CUSTOMER-SERVICE
           predicates:
             - Path=/api/customers/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: customerService
-                fallbackUri: forward:/fallback/customer
+
+        - id: product-service
+          uri: lb://PRODUCT-SERVICE
+          predicates:
+            - Path=/api/products/**
   data:
     redis:
       host: redis
       port: 6379
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET}

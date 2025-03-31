@@ -1,8 +1,9 @@
 package com.shop.customer.controller;
 
+
+import com.shop.customer.exception.UserException;
 import com.shop.customer.model.ErrorResponse;
 import com.shop.customer.model.dto.UserDto;
-import com.shop.customer.exception.UserException;
 import com.shop.customer.service.UserService;
 import com.shop.customer.service.ValidationUtil;
 import jakarta.validation.Valid;
@@ -19,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/users")
+@RequestMapping("/api/customers")
 public class UserContoller {
 
     private final UserService userService;
