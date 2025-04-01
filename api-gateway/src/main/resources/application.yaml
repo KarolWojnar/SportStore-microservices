@@ -1,12 +1,6 @@
 server:
   port: 8080
 
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.loadbalancer: DEBUG
-    com.netflix.discovery: DEBUG
-
 spring:
   application:
     name: api-gateway
@@ -22,6 +16,11 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/**
+
         - id: customer-service
           uri: lb://CUSTOMER-SERVICE
           predicates:

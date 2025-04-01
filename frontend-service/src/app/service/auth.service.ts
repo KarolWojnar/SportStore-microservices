@@ -15,7 +15,7 @@ export class AuthService {
               ) { }
 
   registerUser(user: UserDto) {
-    return this.httpClient.post(`${this.apiUrl}/customers`, user);
+    return this.httpClient.post(`${this.apiUrl}/auth`, user);
   }
 
   updateCustomerInfo(user: CustomerDetails) {

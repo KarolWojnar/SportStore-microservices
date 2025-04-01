@@ -11,6 +11,8 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="com.shop.auth-service.main" target="17" />
+      <module name="com.shop.auth-service.test" target="17" />
       <module name="customer" target="17" />
       <module name="customer.main" target="17" />
       <module name="customer.test" target="17" />

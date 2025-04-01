@@ -1,6 +1,6 @@
-package com.shop.customer.model.entity;
+package com.shop.authservice.model.entity;
 
-import com.shop.customer.model.ActivationType;
+import com.shop.authservice.model.ActivationType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -16,8 +16,8 @@ public class Activation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @NotNull
     @Column(unique = true)
+    @NotNull
     private String activationCode;
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")

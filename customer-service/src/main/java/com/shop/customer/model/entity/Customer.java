@@ -18,9 +18,7 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @NotNull(message = "User is required.")
-    @OneToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id", unique = true)
-    private User user;
+    private Long userId;
     private String firstName;
     private String lastName;
     @NotNull(message = "Shipping address is required.")

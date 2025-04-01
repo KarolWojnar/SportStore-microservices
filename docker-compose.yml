@@ -93,6 +93,25 @@ services:
     networks:
       - store-network
 
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    env_file:
+      - auth-service/.env
+    ports:
+      - "8083:8080"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      user-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - store-network
+
   product-db:
     image: 'mongo:8.0.6'
     container_name: product-db
@@ -123,6 +142,24 @@ services:
       - customer-db-data:/var/lib/mysql
     ports:
       - "3306:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - store-network
+
+  user-db:
+    image: mysql:8.3.0
+    container_name: user-db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: user_db
+    volumes:
+      - user-db-data:/var/lib/mysql
+    ports:
+      - "3307:3306"
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
@@ -162,11 +199,14 @@ services:
         condition: service_started
       product-service:
         condition: service_started
+      auth-service:
+        condition: service_started
     networks:
       - store-network
 
 volumes:
   customer-db-data:
+  user-db-data:
   redis-data:
   product-db-data:
 
