@@ -1,4 +1,4 @@
-package com.shop.customer.model;
+package com.shop.authservice.model;
 
 public enum ActivationType {
     REGISTRATION,

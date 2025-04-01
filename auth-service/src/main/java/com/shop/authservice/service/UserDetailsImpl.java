@@ -1,6 +1,6 @@
-package com.shop.customer.service;
+package com.shop.authservice.service;
 
-import com.shop.customer.model.Roles;
+import com.shop.authservice.model.Roles;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

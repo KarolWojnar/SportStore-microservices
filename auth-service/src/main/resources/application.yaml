@@ -1,8 +1,12 @@
 spring:
   application:
-    name: customer-service
+    name: auth-service
+  data:
+    redis:
+      host: redis
+      port: 6379
   datasource:
-    url: jdbc:mysql://customer-db:3306/customer_db
+    url: jdbc:mysql://user-db:3306/user_db
     username: root
     password: password
   sql:

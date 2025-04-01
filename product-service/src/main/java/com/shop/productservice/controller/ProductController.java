@@ -23,7 +23,7 @@ public class ProductController {
     private final ProductService productService;
     private final CategoryService categoryService;
 
-//    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<?> getProducts(@RequestParam(value = "page", defaultValue = "0") int page,
                                          @RequestParam(value = "size", defaultValue = "6") int size,

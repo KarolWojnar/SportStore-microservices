@@ -1,23 +1,20 @@
-package com.shop.customer.model.dto;
+package com.shop.authservice.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.shop.customer.model.entity.Customer;
-import com.shop.customer.model.entity.User;
-import com.shop.customer.model.Roles;
+import com.shop.authservice.model.Roles;
+import com.shop.authservice.model.entity.User;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserDto extends CustomerDto {
+public class UserDto {
     @Email(message = "Email is not valid.")
     @NotEmpty(message = "Email is required.")
     private String email;
@@ -40,30 +37,11 @@ public class UserDto extends CustomerDto {
                 .build();
     }
 
-    public static Customer toCustomerEntity(UserDto userDto, User user) {
-        return Customer.builder()
-                .user(user)
-                .firstName(userDto.getFirstName())
-                .lastName(userDto.getLastName())
-                .shippingAddress(userDto.getShippingAddress())
-                .build();
-    }
 
     public static UserDto toUserDto(User user) {
         return UserDto.builder()
                 .email(user.getEmail())
                 .role(user.getRole())
                 .build();
-    }
-
-    public static UserDto toCustomerDto(Customer customer, User user) {
-        UserDto userDto = UserDto.builder()
-                .email(user.getEmail())
-                .role(user.getRole())
-                .build();
-        userDto.setFirstName(customer.getFirstName());
-        userDto.setLastName(customer.getLastName());
-        userDto.setShippingAddress(customer.getShippingAddress());
-        return userDto;
     }
 }

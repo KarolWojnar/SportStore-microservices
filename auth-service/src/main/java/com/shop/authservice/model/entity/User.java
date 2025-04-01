@@ -1,6 +1,6 @@
-package com.shop.customer.model.entity;
+package com.shop.authservice.model.entity;
 
-import com.shop.customer.model.Roles;
+import com.shop.authservice.model.Roles;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
@@ -34,9 +34,6 @@ public class User {
     private Roles role = Roles.ROLE_CUSTOMER;
     @Builder.Default
     private boolean enabled = false;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Customer customer;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Activation> activations;
