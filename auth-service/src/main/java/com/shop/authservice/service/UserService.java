@@ -2,10 +2,8 @@ package com.shop.authservice.service;
 
 import com.shop.authservice.exception.UserException;
 import com.shop.authservice.model.ActivationType;
-import com.shop.authservice.model.Roles;
 import com.shop.authservice.model.dto.AuthUser;
 import com.shop.authservice.model.dto.ResetPassword;
-import com.shop.authservice.model.dto.UserDetailsDto;
 import com.shop.authservice.model.dto.UserDto;
 import com.shop.authservice.model.entity.Activation;
 import com.shop.authservice.model.entity.User;
@@ -17,21 +15,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -42,7 +35,8 @@ public class UserService {
     private final ActivationRepository activationRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final JwtUtil jwtUtil;
+    private final SecurityContextWrapper securityContextWrapper;
+    private final JwtService jwtUtil;
     @Value("${jwt.exp}")
     private int exp;
     @Value("${jwt.refresh.exp}")
@@ -66,8 +60,11 @@ public class UserService {
         if (authRequest.getEmail() == null || authRequest.getPassword() == null) {
             throw new UserException("Email or password is null.");
         }
-        String token = getAuth(authRequest);
-        String refreshToken = jwtUtil.generateToken(authRequest.getEmail(), refreshExp);
+        User user = userRepository.findByEmail(authRequest.getEmail())
+                .orElseThrow(() -> new UserException("User not found."));
+
+        String token = getAuth(authRequest, user);
+        String refreshToken = jwtUtil.generateToken(user, refreshExp);
 
         Cookie refreshTokenCookie = new Cookie("Refresh-token", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
@@ -86,7 +83,7 @@ public class UserService {
         return false;
     }
 
-    public String getAuth(AuthUser authRequest) {
+    public String getAuth(AuthUser authRequest, User user) {
         log.info("Authenticating user: {}", authRequest.getEmail());
         try {
             authenticationManager.authenticate(
@@ -98,7 +95,7 @@ public class UserService {
         } catch (Exception e) {
             throw new UserException("Invalid email or password.", e);
         }
-        return jwtUtil.generateToken(authRequest.getEmail(), exp);
+        return jwtUtil.generateToken(user, exp);
     }
 
     @Transactional
@@ -132,57 +129,14 @@ public class UserService {
         return "Password reset successfully.";
     }
 
-    public UserDetailsDto getUserDetails() {
-        User user = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName())
-                .orElseThrow(() -> new UserException("User not found."));
-//        Customer customer = customerRepository.findByUserId(user.getId()).orElse(null);
-        return UserDetailsDto.toDto(user);
-    }
-
-
-    public List<UserDetailsDto> getAllUsers(int page, String search, String role, String enabled) {
-        Pageable pageable = PageRequest.of(page, 10);
-
-        String emailSearch = (search != null && !search.isEmpty()) ? "%" + search.toLowerCase() + "%" : null;
-        Roles roleEnum = (role != null && !role.isEmpty()) ? Roles.valueOf(role) : null;
-        Boolean enabledBool = (enabled != null && !enabled.isEmpty()) ? Boolean.parseBoolean(enabled) : null;
-
-        List<User> users;
-        if (emailSearch != null || roleEnum != null || enabledBool != null) {
-            users = userRepository.findByFilters(emailSearch, roleEnum, enabledBool, pageable);
-        } else {
-            users = userRepository.findAll(pageable).getContent();
-        }
-
-        if (users.isEmpty()) {
-            throw new UsernameNotFoundException("No users found.");
-        }
-
-        return users.stream()
-                .map(UserDetailsDto::toDto)
-                .collect(Collectors.toList());
-    }
-
-    public void changeUserStatus(Long id, boolean status) {
-        User user = userRepository.findById(id).orElseThrow(() -> new UserException("User not found."));
-        user.setEnabled(status);
-        userRepository.save(user);
-        log.info("Changed status of user {} to {}", user.getId(), status);
-    }
-
-    public void changeUserRole(Long id, String role) {
-        User user = userRepository.findById(id).orElseThrow(() -> new UserException("User not found."));
-        user.setRole(Roles.valueOf(role));
-        userRepository.save(user);
-        log.info("Changed role of user {} to {}", user.getId(), role);
-    }
-
     public void logout(HttpServletResponse response, HttpServletRequest request) {
+        String accessToken = extractAccessToken(request);
+        if (accessToken != null) {
+            long expirationTime = jwtUtil.extractExpiration(accessToken).getTime() - System.currentTimeMillis();
+            jwtUtil.addToBlackList(accessToken, expirationTime, "access");
+        }
+
         Cookie[] cookies = request.getCookies();
-
-        long expirationTime = jwtUtil.extractExpiration(extractAccessToken(request)).getTime() - System.currentTimeMillis();
-        jwtUtil.addToBlackList(extractAccessToken(request), expirationTime, "access");
-
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if ("Refresh-token".equals(cookie.getName())) {
@@ -197,6 +151,7 @@ public class UserService {
         }
         SecurityContextHolder.clearContext();
     }
+
 
     private String extractAccessToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
@@ -221,7 +176,7 @@ public class UserService {
 
     public boolean isLoggedIn() {
         try {
-            Optional<User> user = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName());
+            Optional<User> user = securityContextWrapper.getCurrentUser();
             return user.isPresent() && user.get().isEnabled();
         } catch (Exception e) {
             throw new UserException("User not found.", e);
@@ -230,7 +185,7 @@ public class UserService {
 
     public String getRole() {
         try {
-            User user = userRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName())
+            User user = securityContextWrapper.getCurrentUser()
                     .orElseThrow(() -> new UserException("User not found."));
             return user.getRole().name();
         } catch (Exception e) {
@@ -238,4 +193,24 @@ public class UserService {
         }
     }
 
+    public void validateToken(HttpServletRequest request, HttpServletResponse response) {
+        String accessToken = extractAccessToken(request);
+        String refreshToken;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("Refresh-token".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                    if (jwtUtil.isBlacklisted(refreshToken)) {
+                        logout(response, request);
+                        throw new UserException("Token is in blacklist");
+                    }
+                }
+            }
+        }
+        if (accessToken != null && jwtUtil.isBlacklisted(accessToken)) {
+            logout(response, request);
+            throw new UserException("Token is in blacklist");
+        }
+    }
 }

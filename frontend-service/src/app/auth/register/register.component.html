@@ -35,6 +35,22 @@
         </div>
       </div>
 
+      <div class="mb-3">
+        <label for="firstName" class="form-label">First Name</label>
+        <input type="text" class="form-control" id="firstName" formControlName="firstName" />
+        <div *ngIf="registerForm.get('firstName')?.invalid && (registerForm.get('firstName')?.touched || registerForm.get('firstName')?.dirty)" class="text-danger">
+          First Name is required.
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="lastName" class="form-label">Last Name</label>
+        <input type="text" class="form-control" id="lastName" formControlName="lastName" />
+        <div *ngIf="registerForm.get('lastName')?.invalid && (registerForm.get('lastName')?.touched || registerForm.get('lastName')?.dirty)" class="text-danger">
+          Last Name is required.
+        </div>
+      </div>
+
       <button type="submit" class="btn btn-primary w-100" [disabled]="registerForm.invalid">Register</button>
 
       <p class="text-center mt-3">

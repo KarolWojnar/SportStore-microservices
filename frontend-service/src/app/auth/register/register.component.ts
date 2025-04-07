@@ -40,7 +40,9 @@ export class RegisterComponent {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
-      confirmPassword: ['', [Validators.required, Validators.minLength(8)]]
+      confirmPassword: ['', [Validators.required, Validators.minLength(8)]],
+      firstName: [''],
+      lastName: ['']
     },
       { validators: this.passwordsMatchValidator }
     );
@@ -72,10 +74,7 @@ export class RegisterComponent {
       },
       error: (err) => {
         this.isLoading = false;
-        if (err.error.details?.passwordMatching) {
-          this.registerForm.setErrors({ passwordMismatch: true });
-        }
-        this.errorMessage = err.error.details.email.toString() || 'Registration failed. Please try again.';
+        this.errorMessage = err.error.message;
       },
     });
   }

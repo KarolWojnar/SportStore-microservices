@@ -1,7 +1,7 @@
 db = db.getSiblingDB('admin');
 db.auth('root', 'root');
 
-db = db.getSiblingDB('storeDB');
+db = db.getSiblingDB('productDB');
 
 db.createCollection('categories');
 db.createCollection('products');

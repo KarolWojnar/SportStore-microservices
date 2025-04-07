@@ -57,6 +57,26 @@ services:
     networks:
       - store-network
 
+  file-storage-service:
+    container_name: file-storage-service
+    build:
+      context: ./file-storage-service
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8080"
+    volumes:
+      - ./file-storage-service/uploads:/app/uploads
+      - ./file-storage-service/src/main/resources/static:/app/src/main/resources/static
+    depends_on:
+      eureka-server:
+        condition: service_started
+      customer-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - store-network
+
   customer-service:
     container_name: customer-service
     build:
@@ -81,6 +101,8 @@ services:
     build:
       context: ./product-service
       dockerfile: Dockerfile
+    env_file:
+      - product-service/.env
     ports:
       - "8082:8080"
     depends_on:

@@ -1,7 +1,9 @@
 package com.shop.productservice.service;
 
 import com.shop.productservice.exception.ProductException;
+import com.shop.productservice.model.dto.CategoryDto;
 import com.shop.productservice.model.dto.ProductDto;
+import com.shop.productservice.model.dto.ProductsListInfo;
 import com.shop.productservice.model.dto.RateProductDto;
 import com.shop.productservice.model.entity.Category;
 import com.shop.productservice.model.entity.Product;
@@ -28,16 +30,29 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryService categoryService;
 
-    public Map<String, Object> getProducts(int page, int size, String sort, String direction,
-                                           String search, int minPrice, int maxPrice, List<String> categories, boolean isAdmin) {
+    public ProductsListInfo getProducts(int page, int size, String sort, String direction,
+                                        String search, int minPrice, int maxPrice, List<String> categories, boolean isAdmin) {
+        log.info("Page: {}", page);
+        log.info("Size: {}", size);
+        log.info("Sort: {}", sort);
+        log.info("Direction: {}", direction);
+        log.info("Search: {}", search);
+        log.info("Min price: {}", minPrice);
+        log.info("Max price: {}", maxPrice);
+        log.info("Categories: {}", categories);
         Page<Product> products = fetchProducts(page, size, sort, direction, search, minPrice, maxPrice, categories, isAdmin);
-        Map<String, Object> response = new java.util.HashMap<>(Map.of(
-                "products", products.getContent().stream().map(product -> ProductDto.toDto(product, false)).toList(),
-                "totalElements", products.getTotalElements()
-        ));
+        ProductsListInfo response = new ProductsListInfo(
+                products.getContent().stream().map(product -> ProductDto.toDto(product, false)).toList(),
+                products.getTotalElements()
+        );
         if (page == 0) {
-            response.put("categories", categoryService.getCategories());
+            response.setCategories(categoryService.getCategories().stream().map(CategoryDto::getName).toList());
         }
+
+        log.info(String.valueOf(response.getProducts().size()));
+        log.info(String.valueOf(response.getCategories().size()));
+        log.info(String.valueOf(response.getTotalElements()));
+
         return response;
     }
 
@@ -90,6 +105,7 @@ public class ProductService {
 
     public Map<String, Object> getFeaturedProducts() {
         List<Product> products = productRepository.findTop9ByAvailableTrueOrderByOrdersDesc();
+        log.info(String.valueOf(products.size()));
         return Map.of("products", products.stream().map(product -> ProductDto.toDto(product, false)).toList());
     }
 
