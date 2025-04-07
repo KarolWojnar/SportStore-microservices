@@ -59,7 +59,7 @@ export class OrderInfoComponent implements OnInit {
     if (orderId) {
       this.storeService.getOrderById(orderId).subscribe({
         next: (response) => {
-          this.order = response.order;
+          this.order = response;
           if (this.order.status === 'CREATED') {
             this.calculateTimeToDelete();
           }

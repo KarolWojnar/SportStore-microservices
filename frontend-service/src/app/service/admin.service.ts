@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { UserDetails } from '../model/user-dto';
-import { ProductInfo, ProductsResponse } from '../model/product';
+import { UserDetails, UserRole, UserStatus } from '../model/user-dto';
+import { CategoryNew, ProductInfo, ProductsResponse } from '../model/product';
 import { OrderBaseInfo } from '../model/order';
 
 @Injectable({
@@ -29,11 +29,11 @@ export class AdminService {
     return this.httpClient.get<{users: UserDetails[]}>(`${this.apiUrl}/users`, { params });
   }
 
-  setActivationUser(userId: string, status: boolean) {
+  setActivationUser(userId: string, status: UserStatus) {
     return this.httpClient.patch(`${this.apiUrl}/users/${userId}`, status);
   }
 
-  setRole(id: string, role: string) {
+  setRole(id: string, role: UserRole) {
     return this.httpClient.patch(`${this.apiUrl}/users/${id}/role`, role);
   }
 
@@ -51,8 +51,8 @@ export class AdminService {
     return this.httpClient.get<ProductsResponse>(`${this.apiUrl}/products`, { params });
   }
 
-  updateProduct(productId: string, editedProduct: ProductInfo): Observable<{product: ProductInfo}> {
-    return this.httpClient.patch<{product: ProductInfo}>(`${this.apiUrl}/products/${productId}`, editedProduct);
+  updateProduct(productId: string, editedProduct: ProductInfo): Observable<ProductInfo> {
+    return this.httpClient.patch<ProductInfo>(`${this.apiUrl}/products/${productId}`, editedProduct);
   }
 
   changeAvailability(productId: string, newAvailability: boolean) {
@@ -63,8 +63,8 @@ export class AdminService {
     return this.httpClient.post(`${this.apiUrl}/products`, formData);
   }
 
-  addCategory(category: string): Observable<{category: any}> {
-    return this.httpClient.post<{category: any}>(`${this.apiUrl}/categories`, category);
+  addCategory(category: { name: string }): Observable<CategoryNew> {
+    return this.httpClient.post<CategoryNew>(`${this.apiUrl}/categories`, category);
   }
 
   getOrders(page: number = 0, selectedStatus: string | null): Observable<OrderBaseInfo[]>{
