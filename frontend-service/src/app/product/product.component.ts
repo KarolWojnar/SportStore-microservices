@@ -55,7 +55,9 @@ export class ProductComponent implements AfterViewInit {
       this.selectedCategories
     ).subscribe(products => {
       this.products = products.products;
-      this.allCategories = products.categories;
+      if (products.categories.length > 0) {
+        this.allCategories = products.categories;
+      }
       if (this.maxPriceFromData == 9999) {
         this.maxPriceFromData = Math.floor(products.maxPrice + 1);
         this.maxPrice = this.maxPriceFromData;

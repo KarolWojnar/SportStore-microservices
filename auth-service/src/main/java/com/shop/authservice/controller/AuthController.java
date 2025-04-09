@@ -15,6 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
@@ -30,6 +33,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthUser authRequest, HttpServletResponse response) {
         return ResponseEntity.ok(userService.login(authRequest, response));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> loginSuccess(@RequestBody Map<String, String> idToken, HttpServletResponse response) {
+        return ResponseEntity.ok(userService.loginSuccessGoogle(idToken, response));
     }
 
     @PostMapping("/recovery-password")

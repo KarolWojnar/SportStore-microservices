@@ -1,5 +1,6 @@
 package com.shop.authservice.model.entity;
 
+import com.shop.authservice.model.ProviderType;
 import com.shop.authservice.model.Roles;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -28,6 +29,9 @@ public class User {
     @NotEmpty(message = "Email is required.")
     @Column(unique = true)
     private String email;
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    private ProviderType provider = ProviderType.LOCAL;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

@@ -1,5 +1,6 @@
 package com.shop.authservice.repository;
 
+import com.shop.authservice.model.ProviderType;
 import com.shop.authservice.model.Roles;
 import com.shop.authservice.model.entity.User;
 import org.springframework.data.domain.Pageable;
@@ -24,4 +25,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             Roles role,
             Boolean enabled,
             Pageable pageable);
+
+    Optional<User> findByEmailAndProvider(String email, ProviderType providerType);
 }

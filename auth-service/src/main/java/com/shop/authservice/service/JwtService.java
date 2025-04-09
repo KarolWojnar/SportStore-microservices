@@ -1,5 +1,9 @@
 package com.shop.authservice.service;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.shop.authservice.exception.UserException;
 import com.shop.authservice.model.entity.User;
 import io.jsonwebtoken.Claims;
@@ -14,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
+import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -26,6 +31,8 @@ public class JwtService {
     private final RedisTemplate<String, String> redisBlacklistTemplate;
     @Value("${jwt.secret}")
     private String secret;
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
 
     private Key getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
@@ -86,6 +93,23 @@ public class JwtService {
             log.error("Failed to check token in Redis blacklist", e);
             return false;
         }
+    }
+
+    public String getEmailFromGoogleToken(String token) {
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier
+                .Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                .setAudience(Collections.singletonList(googleClientId))
+                .build();
+        try {
+            GoogleIdToken idToken = verifier.verify(token);
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                return payload.getEmail();
+            }
+        } catch (Exception e) {
+            throw new UserException("Invalid Google ID token", e);
+        }
+        return null;
     }
 }
 

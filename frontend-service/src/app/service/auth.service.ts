@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { CustomerDetails, UserDetails, UserDto, UserLoginStatus } from '../model/user-dto';
 import { catchError, Observable, of, tap } from 'rxjs';
 import { AuthStateService } from './auth-state.service';
+import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +17,19 @@ export class AuthService {
 
   registerUser(user: UserDto) {
     return this.httpClient.post(`${this.apiUrl}/auth`, user);
+  }
+
+  googleLogin(idToken: string): Observable<any> {
+    return this.httpClient.post(`${this.apiUrl}/auth/google`, {idToken} ).pipe(
+      tap((response: any) => {
+        if (response && response.token) {
+          localStorage.setItem('token', response.token);
+          this.authState.setLoggedIn(true);
+          localStorage.setItem('cartHasItems', response.cartHasItems ? 'true' : 'false');
+          this.authState.setCartHasItems(response.cartHasItems);
+        }
+      })
+    );
   }
 
   updateCustomerInfo(user: CustomerDetails) {
@@ -45,7 +59,6 @@ export class AuthService {
       })
     );
   }
-
 
   activateAccount(activationCode: string) {
     return this.httpClient.get(`${this.apiUrl}/auth/activate/${activationCode}`);

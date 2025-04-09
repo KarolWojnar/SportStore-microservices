@@ -2,6 +2,8 @@ package com.shop.authservice.service;
 
 import com.shop.authservice.exception.UserException;
 import com.shop.authservice.model.ActivationType;
+import com.shop.authservice.model.ProviderType;
+import com.shop.authservice.model.Roles;
 import com.shop.authservice.model.dto.AuthUser;
 import com.shop.authservice.model.dto.ResetPassword;
 import com.shop.authservice.model.dto.UserDto;
@@ -60,19 +62,50 @@ public class UserService {
         if (authRequest.getEmail() == null || authRequest.getPassword() == null) {
             throw new UserException("Email or password is null.");
         }
-        User user = userRepository.findByEmail(authRequest.getEmail())
+        User user = userRepository.findByEmailAndProvider(authRequest.getEmail(), ProviderType.LOCAL)
                 .orElseThrow(() -> new UserException("User not found."));
 
         String token = getAuth(authRequest, user);
         String refreshToken = jwtUtil.generateToken(user, refreshExp);
+        return getCredentials(token, refreshToken, authRequest.getEmail(), response);
+    }
 
-        Cookie refreshTokenCookie = new Cookie("Refresh-token", refreshToken);
+
+    @Transactional
+    public Map<String, Object> loginSuccessGoogle(Map<String, String> tokenGoogle, HttpServletResponse response) {
+        String idToken = tokenGoogle.get("idToken");
+        String email = jwtUtil.getEmailFromGoogleToken(idToken);
+        User user = userRepository.findByEmail(email).orElse(getOrCreateUser(email));
+        String refreshToken = jwtUtil.generateToken(user, refreshExp);
+        String token = jwtUtil.generateToken(user, exp);
+        return getCredentials(token, refreshToken, email, response);
+    }
+
+    public User getOrCreateUser(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        return user.orElseGet(() -> createGoogleUser(email));
+    }
+
+    private User createGoogleUser(String email) {
+        User user = new User();
+        user.setPassword(passwordEncoder.encode("XXXXXXXX"));
+        user.setEmail(email);
+        user.setProvider(ProviderType.GOOGLE);
+        user.setRole(Roles.ROLE_CUSTOMER);
+        user.setEnabled(true);
+        User createdUser = userRepository.save(user);
+        log.info("Google user created: {}", createdUser.getId());
+        return createdUser;
+    }
+
+    private Map<String, Object> getCredentials(String access, String refresh, String email, HttpServletResponse response) {
+        Cookie refreshTokenCookie = new Cookie("Refresh-token", refresh);
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
         response.addCookie(refreshTokenCookie);
-        boolean cartNotEmpty = isCartNotEmpty(authRequest.getEmail());
-        return Map.of("token", token, "cartHasItems", cartNotEmpty);
+        boolean cartNotEmpty = isCartNotEmpty(email);
+        return Map.of("token", access, "cartHasItems", cartNotEmpty);
     }
 
     private boolean isCartNotEmpty(String email) {

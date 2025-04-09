@@ -32,14 +32,6 @@ public class ProductService {
 
     public ProductsListInfo getProducts(int page, int size, String sort, String direction,
                                         String search, int minPrice, int maxPrice, List<String> categories, boolean isAdmin) {
-        log.info("Page: {}", page);
-        log.info("Size: {}", size);
-        log.info("Sort: {}", sort);
-        log.info("Direction: {}", direction);
-        log.info("Search: {}", search);
-        log.info("Min price: {}", minPrice);
-        log.info("Max price: {}", maxPrice);
-        log.info("Categories: {}", categories);
         Page<Product> products = fetchProducts(page, size, sort, direction, search, minPrice, maxPrice, categories, isAdmin);
         ProductsListInfo response = new ProductsListInfo(
                 products.getContent().stream().map(product -> ProductDto.toDto(product, false)).toList(),
@@ -49,10 +41,6 @@ public class ProductService {
             response.setCategories(categoryService.getCategories().stream().map(CategoryDto::getName).toList());
             response.setMaxPrice(getMaxPrice());
         }
-
-        log.info(String.valueOf(response.getProducts().size()));
-        log.info(String.valueOf(response.getCategories().size()));
-        log.info(String.valueOf(response.getTotalElements()));
 
         return response;
     }

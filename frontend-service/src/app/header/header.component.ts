@@ -14,6 +14,7 @@ import {
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { AuthService } from '../service/auth.service';
 import { AuthStateService } from '../service/auth-state.service';
+import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
 
 @Component({
   selector: 'app-header',
@@ -40,7 +41,8 @@ export class HeaderComponent implements OnInit {
 
   constructor(private authService: AuthService,
               private router: Router,
-              private authState: AuthStateService) { }
+              private authState: AuthStateService,
+              private socialAuthService: SocialAuthService) { }
 
   ngOnInit(): void {
     this.authState.isLoggedIn$.subscribe((isLoggedIn) => {
@@ -84,6 +86,9 @@ export class HeaderComponent implements OnInit {
   logout() {
     this.authService.logout().subscribe({
       next: () => {
+        this.socialAuthService.signOut().then(() => {
+          this.router.navigate(['/login']);
+        });
         this.router.navigate(['/login']);
       },
       error: () => {
