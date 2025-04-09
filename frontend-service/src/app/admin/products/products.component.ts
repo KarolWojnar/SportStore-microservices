@@ -113,7 +113,6 @@ export class ProductsComponent implements OnInit, AfterViewInit, OnDestroy {
           return;
         }
         this.errorMessage = 'Failed to load products. Please try again later.';
-        console.error('Error loading products:', error);
       },
       complete: () => {
         this.isLoading = false;
@@ -187,7 +186,7 @@ export class ProductsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.editedProduct && this.editedProduct.id == productId) {
       this.adminService.updateProduct(productId, this.editedProduct).subscribe({
         next: (response) => {
-          console.log('Product updated successfully:', response);
+          console.log('Product updated successfully');
           const index = this.products.findIndex(product => product.id === productId);
           if (index !== -1) {
             this.products[index].name = response.name;
@@ -196,9 +195,6 @@ export class ProductsComponent implements OnInit, AfterViewInit, OnDestroy {
           }
           this.cancelEdit();
         },
-        error: (error) => {
-          console.error('Error updating product:', error);
-        }
       });
     }
   }
@@ -259,8 +255,8 @@ export class ProductsComponent implements OnInit, AfterViewInit, OnDestroy {
           this.products[index].available = available;
         }
       },
-      error: (error) => {
-        console.error('Error updating product availability:', error);
+      error: () => {
+        console.error('Error updating product availability');
       }
     });
   }

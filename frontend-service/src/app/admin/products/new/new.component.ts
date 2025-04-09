@@ -51,7 +51,6 @@ export class NewComponent implements OnInit {
   getCategories() {
     this.storeService.getCategories().subscribe({
       next: (data) => {
-        console.log(data)
         this.categories = data;
       },
       error: (error) => {
@@ -103,7 +102,6 @@ export class NewComponent implements OnInit {
       error: (error: HttpErrorResponse) => {
         this.isLoading = false;
         this.errorMessage = error.error?.message || 'Failed to create product. Please try again.';
-        console.error('Error creating product:', error);
       },
       complete: () => {
         this.isLoading = false;

@@ -12,6 +12,7 @@ public class ProductsListInfo {
     private List<ProductDto> products;
     private long totalElements;
     private List<String> categories;
+    private double maxPrice;
 
     public ProductsListInfo(List<ProductDto> products, long totalElements) {
         this.products = products;

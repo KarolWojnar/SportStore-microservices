@@ -86,8 +86,8 @@ export class HeaderComponent implements OnInit {
       next: () => {
         this.router.navigate(['/login']);
       },
-      error: (err) => {
-        console.error('Logout failed:', err);
+      error: () => {
+        console.error('Logout failed');
       }
     });
   }

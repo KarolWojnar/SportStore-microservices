@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthStateService } from './auth-state.service';
 import { CustomerDto } from '../model/user-dto';
-import { CategoryNew, Product, ProductCart } from '../model/product';
+import { CategoryNew, Product, ProductCart, ProductsResponse } from '../model/product';
 import { Order, OrderBaseInfo, OrderRatingProduct, PaymentLink } from '../model/order';
 
 @Injectable({
@@ -21,12 +21,12 @@ export class StoreService {
               sort: string = 'id', direction: string = 'asc',
               search: string = '', minPrice?: number,
               maxPrice?: number, categories: string[] = [])
-    : Observable<{ products: Product[]; totalElements: number }> {
+    : Observable<ProductsResponse> {
 
     const params: any = { page, size, sort, direction, search, categories };
     if (minPrice !== undefined) params.minPrice = minPrice;
     if (maxPrice !== undefined) params.maxPrice = maxPrice;
-    return this.httpClient.get<{ products: Product[]; totalElements: number }>(`${this.apiUrl}`, {params});
+    return this.httpClient.get<ProductsResponse>(`${this.apiUrl}`, {params});
   }
 
   getCategories() {

@@ -33,9 +33,6 @@ export class CartComponent implements OnInit {
       next: (data) => {
         this.products = data.products;
         this.calculateTotalPrice();
-      },
-      error: (err) => {
-        console.error('Error fetching cart:', err);
       }
     });
   }
@@ -62,9 +59,6 @@ export class CartComponent implements OnInit {
     this.storeService.removeOneFromCart(productId).subscribe({
       next: () => {
         this.loadCart();
-      },
-      error: (error) => {
-        console.error('Error decreasing quantity:', error);
       }
     });
   }
@@ -74,8 +68,7 @@ export class CartComponent implements OnInit {
       next: () => {
         this.loadCart();
       },
-      error: (error) => {
-        console.error('Error removing item:', error);
+      error: () => {
       }
     });
   }
@@ -84,9 +77,6 @@ export class CartComponent implements OnInit {
     this.storeService.clearCart().subscribe({
       next: () => {
         this.loadCart();
-      },
-      error: (error) => {
-        console.error('Error clearing cart:', error);
       }
     });
   }
@@ -101,8 +91,8 @@ export class CartComponent implements OnInit {
         }
         this.calculateTotalPrice();
       },
-      error: (error) => {
-        console.error('Error loading cart:', error);
+      error: () => {
+        console.error('Error loading cart');
       }
     });
   }

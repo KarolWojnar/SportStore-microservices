@@ -47,9 +47,6 @@ export class DetailsComponent implements OnInit {
       next: (product) => {
         this.product = product.product;
         this.relatedProducts = product.relatedProducts;
-      },
-      error: (error) => {
-        console.error('Error fetching product:', error);
       }
     });
   }

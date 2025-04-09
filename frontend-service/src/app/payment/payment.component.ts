@@ -78,11 +78,11 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
   openConfirmationModal(content: TemplateRef<any>) {
     this.modalService.open(content, { ariaLabelledBy: 'modal-basic-title' }).result.then(
-      (result) => {
-        console.log('Modal closed with result:', result);
+      () => {
+        console.log('Modal closed with success');
       },
-      (reason) => {
-        console.log('Modal dismissed with reason:', reason);
+      () => {
+        console.log('Modal dismissed');
       }
     );
   }
@@ -177,8 +177,8 @@ export class PaymentComponent implements OnInit, OnDestroy {
             window.location.href = response.url;
           }
         },
-        error: (err) => {
-          console.error('Error updating customer:', err);
+        error: () => {
+          console.error('Error updating customer');
           this.isLoading = false;
           this.errorMessage = 'An error occurred while processing payment. Try again later.';
         }

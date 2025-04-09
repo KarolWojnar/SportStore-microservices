@@ -47,6 +47,7 @@ public class ProductService {
         );
         if (page == 0) {
             response.setCategories(categoryService.getCategories().stream().map(CategoryDto::getName).toList());
+            response.setMaxPrice(getMaxPrice());
         }
 
         log.info(String.valueOf(response.getProducts().size()));

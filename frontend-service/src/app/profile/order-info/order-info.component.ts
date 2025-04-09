@@ -70,7 +70,6 @@ export class OrderInfoComponent implements OnInit {
         error: (err) => {
           this.isLoading = false;
           this.errorMessage = err.error.message;
-          console.error('Error fetching order:', err);
         }
       });
     }
@@ -120,8 +119,8 @@ export class OrderInfoComponent implements OnInit {
       next: () => {
         this.order.status = 'ANNULLED';
       },
-      error: (err) => {
-        console.error('Error updating customer:', err);
+      error: () => {
+        console.error('Error updating customer');
       }
     });
   }
@@ -153,7 +152,6 @@ export class OrderInfoComponent implements OnInit {
         },
         error: (err) => {
           this.errorMessage = err.error.message;
-          console.error('Error updating customer:', err);
         }
       });
     } else {
@@ -169,7 +167,7 @@ export class OrderInfoComponent implements OnInit {
       },
       error: (err) => {
         this.errorMessage = err.error.message;
-        console.error('Error updating customer:', err);
+        console.error('Error updating customer');
       }
     });
   }

@@ -43,6 +43,7 @@ export interface ProductsResponse {
   totalElements: number;
   categories: string[];
   products: ProductDetails[];
+  maxPrice: number;
 }
 
 export interface NewProduct {
