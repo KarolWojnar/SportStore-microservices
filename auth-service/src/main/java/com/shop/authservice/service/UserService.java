@@ -38,6 +38,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextWrapper securityContextWrapper;
+    private final KafkaEventService kafkaEventService;
     private final JwtService jwtUtil;
     @Value("${jwt.exp}")
     private int exp;
@@ -53,7 +54,8 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User newUser = userRepository.save(UserDto.toUserEntity(user));
         Activation activation = activationRepository.save(new Activation(newUser, ActivationType.REGISTRATION));
-        //todo: notification-service: send email
+        kafkaEventService.sendRegistrationEvent(newUser.getEmail(), activation);
+
         log.info("User created: {}", newUser.getId());
         return UserDto.toUserDto(newUser);
     }
@@ -136,8 +138,7 @@ public class UserService {
         log.info("Recovery password for email: {}", email);
         User user = userRepository.findByEmailAndEnabled(email, true).orElseThrow(() -> new UserException("Email not found."));
         Activation activation = activationRepository.save(new Activation(user, ActivationType.RESET_PASSWORD));
-        //todo: send email
-//        emailService.sendEmailResetPassword(email, activation);
+        kafkaEventService.sendPasswordResetEvent(user.getEmail(), activation);
         return "Code sent! Check your email.";
     }
 

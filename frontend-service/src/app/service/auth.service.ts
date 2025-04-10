@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { CustomerDetails, UserDetails, UserDto, UserLoginStatus } from '../model/user-dto';
 import { catchError, Observable, of, tap } from 'rxjs';
 import { AuthStateService } from './auth-state.service';
-import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
+import {  SocialAuthService } from '@abacritt/angularx-social-login';
 
 @Injectable({
   providedIn: 'root'
@@ -12,8 +12,8 @@ export class AuthService {
   private apiUrl = 'http://localhost:8080/api';
 
   constructor(private httpClient: HttpClient,
-              private authState: AuthStateService
-              ) { }
+              private authState: AuthStateService,
+              private authService: SocialAuthService) { }
 
   registerUser(user: UserDto) {
     return this.httpClient.post(`${this.apiUrl}/auth`, user);
@@ -23,6 +23,7 @@ export class AuthService {
     return this.httpClient.post(`${this.apiUrl}/auth/google`, {idToken} ).pipe(
       tap((response: any) => {
         if (response && response.token) {
+          localStorage.setItem('googleToken', idToken);
           localStorage.setItem('token', response.token);
           this.authState.setLoggedIn(true);
           localStorage.setItem('cartHasItems', response.cartHasItems ? 'true' : 'false');
@@ -54,8 +55,10 @@ export class AuthService {
       tap(() => {
         this.authState.setLoggedIn(false);
         localStorage.removeItem('token');
+        localStorage.removeItem('googleToken');
         localStorage.removeItem('isAdmin');
         localStorage.removeItem('cartHasItems');
+        this.authService.signOut();
       })
     );
   }
@@ -70,6 +73,7 @@ export class AuthService {
         this.authState.setLoggedIn(false);
         this.authState.setAdmin(false);
         localStorage.removeItem('token');
+        localStorage.removeItem('googleToken');
         localStorage.removeItem('isAdmin');
         return of({ loggedIn: false });
       })

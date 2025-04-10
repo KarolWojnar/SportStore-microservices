@@ -4,6 +4,7 @@ services:
     image: confluentinc/cp-zookeeper:7.4.4
     container_name: zookeeper
     environment:
+      ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
@@ -25,6 +26,9 @@ services:
       - "9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
     healthcheck:
@@ -35,17 +39,17 @@ services:
     networks:
       - store-network
 
-  frontend-service:
-    build:
-      context: ./frontend-service
-      dockerfile: Dockerfile
-    container_name: frontend-service
-    ports:
-      - '4200:4200'
-    volumes:
-      - ./frontend-service:/app
-    networks:
-      - store-network
+#  frontend-service:
+#    build:
+#      context: ./frontend-service
+#      dockerfile: Dockerfile
+#    container_name: frontend-service
+#    ports:
+#      - '4200:4200'
+#    volumes:
+#      - ./frontend-service:/app
+#    networks:
+#      - store-network
 
   eureka-server:
     container_name: eureka-server
@@ -96,6 +100,23 @@ services:
     networks:
       - store-network
 
+  notification-service:
+    container_name: notification-service
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    env_file:
+      - notification-service/.env
+    ports:
+      - "8085:8080"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    networks:
+      - store-network
+
   product-service:
     container_name: product-service
     build:
@@ -109,6 +130,8 @@ services:
       eureka-server:
         condition: service_started
       product-db:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
       redis:
         condition: service_healthy

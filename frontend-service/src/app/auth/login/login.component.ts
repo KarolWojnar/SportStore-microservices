@@ -57,6 +57,15 @@ export class LoginComponent implements OnInit, OnDestroy{
       this.loginForm.patchValue({email: this.email});
     }
 
+    const googleToken = localStorage.getItem('googleToken');
+    if (googleToken) {
+      this.authService.isLoggedIn().subscribe(status => {
+        if (status.loggedIn) {
+          this.router.navigate(['/']);
+        }
+      });
+    }
+
     this.authStateSubscription = this.socialAuthService.authState.subscribe((user: SocialUser) => {
       if (user) {
         this.handleGoogleLogin(user);
@@ -81,7 +90,6 @@ export class LoginComponent implements OnInit, OnDestroy{
   }
 
   private handleGoogleLogin(user: SocialUser): void {
-    localStorage.setItem('googleToken', user.idToken);
     this.authService.googleLogin(user.idToken).subscribe({
       next: () => {
         this.router.navigate(['/']);

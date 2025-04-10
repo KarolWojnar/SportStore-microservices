@@ -17,12 +17,16 @@ export const appConfig: ApplicationConfig = {
     {
       provide: 'SocialAuthServiceConfig',
       useValue: {
-        autoLogin: false,
+        autoLogin: true,
+        lang: 'en-US',
         providers: [
           {
             id: GoogleLoginProvider.PROVIDER_ID,
             provider: new GoogleLoginProvider(
-              environment.googleClientId
+              environment.googleClientId,
+              {
+                oneTapEnabled: true
+              }
             )
           }
         ]
