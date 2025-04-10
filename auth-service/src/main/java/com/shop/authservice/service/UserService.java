@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -136,7 +138,9 @@ public class UserService {
     @Transactional
     public String recoveryPassword(String email) {
         log.info("Recovery password for email: {}", email);
-        User user = userRepository.findByEmailAndEnabled(email, true).orElseThrow(() -> new UserException("Email not found."));
+        User user = userRepository
+                .findByEmailAndEnabledAndProvider(email, true, ProviderType.LOCAL)
+                .orElseThrow(() -> new UserException("Email not found."));
         Activation activation = activationRepository.save(new Activation(user, ActivationType.RESET_PASSWORD));
         kafkaEventService.sendPasswordResetEvent(user.getEmail(), activation);
         return "Code sent! Check your email.";
@@ -246,5 +250,18 @@ public class UserService {
             logout(response, request);
             throw new UserException("Token is in blacklist");
         }
+    }
+
+    @Scheduled(cron = "0 0 * * * *")
+    @Transactional
+    public void clearInactive() {
+        List<Activation> codes = activationRepository.findAllByExpiresAtBefore(java.time.LocalDateTime.now());
+        List<User> users = codes.stream()
+                .filter(c -> c.getType() == ActivationType.REGISTRATION)
+                .map(Activation::getUser)
+                .toList();
+        activationRepository.deleteAll(codes);
+        userRepository.deleteAll(users);
+        log.info("Deleted {} accounts.", users.size());
     }
 }

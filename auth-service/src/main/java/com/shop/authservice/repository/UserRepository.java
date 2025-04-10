@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
-    Optional<User> findByEmailAndEnabled(String email, boolean enabled);
+    Optional<User> findByEmailAndEnabledAndProvider(String email, boolean enabled, ProviderType providerType);
     void deleteAllByIdIn(Collection<Long> id);
     @Query("SELECT u FROM users u WHERE " +
             "(?1 IS NULL OR LOWER(u.email) LIKE LOWER(?1)) AND " +

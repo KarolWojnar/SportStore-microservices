@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
@@ -24,6 +26,10 @@ public class EmailService {
 
     private final JavaMailSender javaMailSender;
 
+    @Retryable(
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 5000)
+    )
     public void sendEmailActivation(UserDataOperationEvent registrationEvent) {
         try {
             String expiration = registrationEvent.expiresAt().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
@@ -38,10 +44,15 @@ public class EmailService {
             javaMailSender.send(message);
             log.info("Activation email sent to {}", registrationEvent.email());
         } catch (Exception e) {
+            log.error("Error sending activation email email to {}", registrationEvent.email(), e);
             throw new RuntimeException("Failed to send activation email", e);
         }
     }
 
+    @Retryable(
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 5000)
+    )
     public void sendEmailResetPassword(UserDataOperationEvent resetPassword) {
         try {
             String expiration = resetPassword.expiresAt().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
@@ -56,6 +67,7 @@ public class EmailService {
             javaMailSender.send(message);
             log.info("Reset password email sent to {}", resetPassword.email());
         } catch (Exception e) {
+            log.error("Error sending reset password email to {}", resetPassword.email(), e);
             throw new RuntimeException("Failed to send reset password email", e);
         }
     }

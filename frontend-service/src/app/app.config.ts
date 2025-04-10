@@ -25,7 +25,6 @@ export const appConfig: ApplicationConfig = {
             provider: new GoogleLoginProvider(
               environment.googleClientId,
               {
-                oneTapEnabled: true
               }
             )
           }
