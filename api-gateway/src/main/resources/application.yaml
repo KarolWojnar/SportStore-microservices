@@ -43,7 +43,6 @@ spring:
           filters:
             - name: AuthenticationFilter
               args: {}
-
         - id: product-service
           uri: lb://PRODUCT-SERVICE
           predicates:
@@ -51,7 +50,13 @@ spring:
           filters:
             - name: AuthenticationFilter
               args: {}
-
+        - id: cart-service
+          uri: lb://CART-SERVICE
+          predicates:
+            - Path=/api/cart/**
+          filters:
+            - name: AuthenticationFilter
+              args: { }
         - id: file-storage-service
           uri: lb://file-storage-service
           predicates:
@@ -60,7 +65,7 @@ spring:
             - RewritePath=/images/(?<segment>.*), /api/files/$\{segment}
   data:
     redis:
-      host: redis
+      host: redis-auth
       port: 6379
   web:
     resources:

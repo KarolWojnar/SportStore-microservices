@@ -39,17 +39,17 @@ services:
     networks:
       - store-network
 
-#  frontend-service:
-#    build:
-#      context: ./frontend-service
-#      dockerfile: Dockerfile
-#    container_name: frontend-service
-#    ports:
-#      - '4200:4200'
-#    volumes:
-#      - ./frontend-service:/app
-#    networks:
-#      - store-network
+  frontend-service:
+    build:
+      context: ./frontend-service
+      dockerfile: Dockerfile
+    container_name: frontend-service
+    ports:
+      - '4200:4200'
+    volumes:
+      - ./frontend-service:/app
+    networks:
+      - store-network
 
   eureka-server:
     container_name: eureka-server
@@ -167,7 +167,7 @@ services:
     ports:
       - '27017:27017'
     volumes:
-      - product-db-data:/data/db
+      - product_db_data:/data/db
       - ./product-service/init.js:/docker-entrypoint-initdb.d/init.js:ro
     networks:
       - store-network
@@ -184,7 +184,7 @@ services:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: customer_db
     volumes:
-      - customer-db-data:/var/lib/mysql
+      - customer_db_data:/var/lib/mysql
     ports:
       - "3306:3306"
     healthcheck:
@@ -202,7 +202,7 @@ services:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: user_db
     volumes:
-      - user-db-data:/var/lib/mysql
+      - user_db_data:/var/lib/mysql
     ports:
       - "3307:3306"
     healthcheck:
@@ -213,13 +213,28 @@ services:
     networks:
       - store-network
 
-  redis:
-    container_name: redis
+  redis-auth:
+    container_name: redis-auth
     image: redis:7.4.2-alpine
     ports:
       - '6379:6379'
     volumes:
-      - redis-data:/data
+      - redis_auth_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - store-network
+
+  redis-cart:
+    container_name: redis-cart
+    image: redis:7.4.2-alpine
+    ports:
+      - '6380:6379'
+    volumes:
+      - redis_cart_data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -250,10 +265,11 @@ services:
       - store-network
 
 volumes:
-  customer-db-data:
-  user-db-data:
-  redis-data:
-  product-db-data:
+  customer_db_data:
+  user_db_data:
+  redis_cart_data:
+  redis_auth_data:
+  product_db_data:
 
 networks:
   store-network:

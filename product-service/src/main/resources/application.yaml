@@ -3,7 +3,7 @@ spring:
     name: product-service
   data:
     redis:
-      host: redis
+      host: redis-auth
       port: 6379
     mongodb:
       authentication-database: admin

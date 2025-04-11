@@ -19,6 +19,7 @@ public class OutboxEvent {
     @Column(columnDefinition = "TEXT")
     private String payload;
     private boolean sent = false;
+    private LocalDateTime sentAt;
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public OutboxEvent(String topic, String payload, String eventType) {

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -67,19 +68,32 @@ public class KafkaEventService {
         }
     }
 
+    @Transactional
     @Scheduled(cron = "*/5 * * * * *")
     public void trySendEvents() {
         List<OutboxEvent> events = outboxEventRepository.findAllBySentFalse();
         events.forEach(event -> {
             try {
-                Object mappedClass = objectMapper.readValue(event.getPayload(), Class.forName(event.getEventType()));
+                Object mappedClass = objectMapper
+                        .readValue(event.getPayload(), Class.forName(event.getEventType()));
                 kafkaTemplate.send(event.getTopic(), mappedClass);
                 event.setSent(true);
+                event.setSentAt(LocalDateTime.now());
                 outboxEventRepository.save(event);
             } catch (Exception e) {
                 log.error("Error sending event: {}", event.getTopic(), e);
             }
         });
-        log.info("Sent {} events", events.size());
+        if (!events.isEmpty()) {
+            log.info("Sent {} events", events.size());
+        }
+    }
+
+    @Scheduled(cron = "0 0 3 * * *")
+    public void clearEvents() {
+        log.info("Clearing events");
+        LocalDateTime time = LocalDateTime.now().minusDays(2);
+        outboxEventRepository.deleteAllBySentTrueAndSentAtBefore(time);
+        outboxEventRepository.deleteAll();
     }
 }

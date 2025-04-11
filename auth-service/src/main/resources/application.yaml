@@ -13,7 +13,7 @@ spring:
     name: auth-service
   data:
     redis:
-      host: redis
+      host: redis-auth
       port: 6379
   datasource:
     url: jdbc:mysql://user-db:3306/user_db
