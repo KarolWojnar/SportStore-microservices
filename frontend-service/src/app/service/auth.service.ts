@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { CustomerDetails, UserDetails, UserDto, UserLoginStatus } from '../model/user-dto';
 import { catchError, Observable, of, tap } from 'rxjs';
 import { AuthStateService } from './auth-state.service';
-import {  SocialAuthService } from '@abacritt/angularx-social-login';
 
 @Injectable({
   providedIn: 'root'
@@ -12,8 +11,7 @@ export class AuthService {
   private apiUrl = 'http://localhost:8080/api';
 
   constructor(private httpClient: HttpClient,
-              private authState: AuthStateService,
-              private authService: SocialAuthService) { }
+              private authState: AuthStateService) {}
 
   registerUser(user: UserDto) {
     return this.httpClient.post(`${this.apiUrl}/auth`, user);
@@ -58,7 +56,6 @@ export class AuthService {
         localStorage.removeItem('googleToken');
         localStorage.removeItem('isAdmin');
         localStorage.removeItem('cartHasItems');
-        this.authService.signOut();
       })
     );
   }

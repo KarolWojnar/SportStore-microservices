@@ -8,9 +8,12 @@ import {
   SocialAuthService,
   SocialUser,
   SocialLoginModule,
-  GoogleSigninButtonModule
+  GoogleSigninButtonModule,
+  GoogleLoginProvider,
+  SocialAuthServiceConfig
 } from '@abacritt/angularx-social-login';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../enviroments/env';
 
 @Component({
   selector: 'app-login',
@@ -23,7 +26,26 @@ import { Subscription } from 'rxjs';
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
-  standalone: true
+  standalone: true,
+  providers: [
+    SocialAuthService,
+    {
+      provide: 'SocialAuthServiceConfig',
+      useValue: {
+        autoLogin: false,
+        lang: 'en-US',
+        providers: [
+          {
+            id: GoogleLoginProvider.PROVIDER_ID,
+            provider: new GoogleLoginProvider(
+              environment.googleClientId,
+              { }
+            )
+          }
+        ]
+      } as SocialAuthServiceConfig
+    }
+  ]
 })
 export class LoginComponent implements OnInit, OnDestroy{
   loginForm: FormGroup;
@@ -48,14 +70,14 @@ export class LoginComponent implements OnInit, OnDestroy{
     if (this.authStateSubscription) {
       this.authStateSubscription.unsubscribe();
     }
-    }
+  }
 
   ngOnInit(): void {
     const navigationState = this.router.getCurrentNavigation()?.extras.state;
     if (navigationState && navigationState['email']) {
       this.email = navigationState['email'];
       this.loginForm.patchValue({email: this.email});
-    }
+  }
 
     const googleToken = localStorage.getItem('googleToken');
     if (googleToken) {
