@@ -43,6 +43,7 @@ spring:
           filters:
             - name: AuthenticationFilter
               args: {}
+
         - id: product-service
           uri: lb://PRODUCT-SERVICE
           predicates:
@@ -50,6 +51,7 @@ spring:
           filters:
             - name: AuthenticationFilter
               args: {}
+
         - id: cart-service
           uri: lb://CART-SERVICE
           predicates:
@@ -57,16 +59,13 @@ spring:
           filters:
             - name: AuthenticationFilter
               args: { }
+
         - id: file-storage-service
           uri: lb://file-storage-service
           predicates:
             - Path=/images/**
           filters:
             - RewritePath=/images/(?<segment>.*), /api/files/$\{segment}
-  data:
-    redis:
-      host: redis-auth
-      port: 6379
   web:
     resources:
       add-mappings: true
@@ -80,12 +79,6 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
   instance:
     prefer-ip-address: true
-
-jwt:
-  secret: ${JWT_SECRET}
-  exp: 3600000
-  refresh:
-    exp: 604800000
 
 logging:
   level:

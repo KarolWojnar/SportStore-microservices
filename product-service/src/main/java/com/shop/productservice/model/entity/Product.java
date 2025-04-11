@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +18,7 @@ public class Product {
     @Indexed
     private String name;
     @Indexed
-    private double price;
+    private BigDecimal price;
     private int amountLeft;
     private String description;
     private String imageUrl;

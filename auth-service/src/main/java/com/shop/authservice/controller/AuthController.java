@@ -1,10 +1,7 @@
 package com.shop.authservice.controller;
 
 import com.shop.authservice.model.SuccessResponse;
-import com.shop.authservice.model.dto.AuthUser;
-import com.shop.authservice.model.dto.LoginStatus;
-import com.shop.authservice.model.dto.ResetPassword;
-import com.shop.authservice.model.dto.UserDto;
+import com.shop.authservice.model.dto.*;
 import com.shop.authservice.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -47,8 +44,7 @@ public class AuthController {
 
     @GetMapping("/validate")
     public ResponseEntity<?> validate(HttpServletRequest request, HttpServletResponse response) {
-        userService.validateToken(request, response);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok((userService.validateToken(request, response)));
     }
 
     @GetMapping("/check-reset-code/{code}")

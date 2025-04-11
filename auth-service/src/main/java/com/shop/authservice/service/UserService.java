@@ -7,6 +7,7 @@ import com.shop.authservice.model.Roles;
 import com.shop.authservice.model.dto.AuthUser;
 import com.shop.authservice.model.dto.ResetPassword;
 import com.shop.authservice.model.dto.UserDto;
+import com.shop.authservice.model.dto.ValidUser;
 import com.shop.authservice.model.entity.Activation;
 import com.shop.authservice.model.entity.User;
 import com.shop.authservice.repository.ActivationRepository;
@@ -231,7 +232,7 @@ public class UserService {
         }
     }
 
-    public void validateToken(HttpServletRequest request, HttpServletResponse response) {
+    public ValidUser validateToken(HttpServletRequest request, HttpServletResponse response) {
         String accessToken = extractAccessToken(request);
         String refreshToken;
         Cookie[] cookies = request.getCookies();
@@ -250,6 +251,14 @@ public class UserService {
             logout(response, request);
             throw new UserException("Token is in blacklist");
         }
+        Optional<User> user = securityContextWrapper.getCurrentUser();
+        ValidUser validUser = new ValidUser();
+        if (user.isPresent()) {
+            validUser.setRole(user.get().getRole().name());
+            validUser.setUserId(user.get().getId());
+            validUser.setEmail(user.get().getEmail());
+        }
+        return validUser;
     }
 
     @Scheduled(cron = "0 0 * * * *")

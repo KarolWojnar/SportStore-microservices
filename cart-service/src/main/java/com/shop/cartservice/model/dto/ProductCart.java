@@ -1,6 +1,5 @@
-package com.shop.productservice.model.dto;
+package com.shop.cartservice.model.dto;
 
-import com.shop.productservice.model.entity.Product;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -14,9 +13,9 @@ public class ProductCart {
     private int quantity;
     private int totalQuantity;
 
-    public static ProductCart toDto(Product product, int quantity) {
+    public static ProductCart toDto(ProductBase product, int quantity) {
         ProductCart productCart = new ProductCart();
-        productCart.setProductId(product.getId());
+        productCart.setProductId(product.getProductId());
         productCart.setName(product.getName());
         productCart.setImage(product.getImageUrl());
         productCart.setPrice(product.getPrice());
@@ -24,5 +23,4 @@ public class ProductCart {
         productCart.setTotalQuantity(product.getAmountLeft());
         return productCart;
     }
-
 }

@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -21,7 +20,6 @@ public class ProductController {
     private final CategoryService categoryService;
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getProducts(@RequestParam(value = "page", defaultValue = "0") int page,
                                          @RequestParam(value = "size", defaultValue = "6") int size,
                                          @RequestParam(value = "sort", defaultValue = "id") String sort,
@@ -50,7 +48,6 @@ public class ProductController {
         return ResponseEntity.ok(productService.getDetails(id));
     }
 
-    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/rate")
     public ResponseEntity<?> rateProduct(@Valid @RequestBody RateProductDto rateProductDto) {
         productService.rateProduct(rateProductDto);
