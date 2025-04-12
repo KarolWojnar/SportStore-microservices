@@ -15,22 +15,7 @@ spring:
   cloud:
     loadbalancer:
       enabled: true
-  kafka:
-    bootstrap-servers: kafka:9092
-    consumer:
-      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      properties:
-        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.trusted.packages: "*"
-        spring.json.type.mapping: >-
-          product-cart-quantity-check-request:com.shop.productservice.model.ProductQuantityCheck,
-          product-cart-info-request:com.shop.productservice.model.dto.ProductInfoRequest,
-          product-cart-quantity-check-response:com.shop.productservice.model.ProductQuantityCheck,
-          product-cart-info-response:com.shop.productservice.model.dto.ProductInfoResponse
-    producer:
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      properties:
-        spring.json.add.type.headers: false
+  kafka.bootstrap-servers: kafka:9092
 
 server:
   port: 0

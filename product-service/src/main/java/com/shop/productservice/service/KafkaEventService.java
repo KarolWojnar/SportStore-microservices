@@ -1,7 +1,7 @@
 package com.shop.productservice.service;
 
 import com.shop.productservice.exception.ProductException;
-import com.shop.productservice.model.ProductQuantityCheck;
+import com.shop.productservice.model.dto.ProductQuantityCheck;
 import com.shop.productservice.model.dto.ProductBase;
 import com.shop.productservice.model.dto.ProductInfoRequest;
 import com.shop.productservice.model.dto.ProductInfoResponse;
@@ -23,7 +23,8 @@ public class KafkaEventService {
     private final ProductRepository productRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @KafkaListener(topics = "product-cart-quantity-check-request", groupId = "product-group")
+    @KafkaListener(topics = "product-cart-quantity-check-request", groupId = "product-group",
+            containerFactory = "kafkaListenerContainerFactory")
     public void checkProductAmountAvaibility(ProductQuantityCheck productQuantityCheck) {
         Product product = productRepository
                 .findById(productQuantityCheck.getProductId())
@@ -37,7 +38,8 @@ public class KafkaEventService {
         );
     }
 
-    @KafkaListener(topics = "product-cart-info-request", groupId = "product-group")
+    @KafkaListener(topics = "product-cart-info-request", groupId = "product-group",
+            containerFactory = "kafkaListenerContainerFactory")
     public void handleProductInfoRequest(ProductInfoRequest request) {
         try {
             List<Product> products = productRepository.findAllById(request.getProductIds());

@@ -13,7 +13,7 @@ public class CartController {
 
     private final CartService cartService;
 
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<?> getCart(@RequestHeader("X-User-Id") @NonNull String userId) {
         return ResponseEntity.ok(cartService.getCart(userId));
     }
@@ -39,13 +39,13 @@ public class CartController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/cart")
+    @DeleteMapping
     public ResponseEntity<?> deleteCart(@RequestHeader("X-User-Id") @NonNull String userId) {
         cartService.deleteCart(userId);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/cart/valid")
+    @GetMapping("/valid")
     public ResponseEntity<?> validateCart(@RequestHeader("X-User-Id") @NonNull String userId) {
         cartService.validateCart(userId);
         return ResponseEntity.noContent().build();

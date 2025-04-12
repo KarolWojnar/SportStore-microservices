@@ -1,6 +1,6 @@
 package com.shop.cartservice.service;
 
-import com.shop.cartservice.model.ProductQuantityCheck;
+import com.shop.cartservice.model.dto.ProductQuantityCheck;
 import com.shop.cartservice.model.dto.ProductBase;
 import com.shop.cartservice.model.dto.ProductInfoRequest;
 import com.shop.cartservice.model.dto.ProductInfoResponse;
@@ -38,7 +38,8 @@ public class KafkaEventService {
         }
     }
 
-    @KafkaListener(topics = "product-cart-quantity-check-response", groupId = "cart-service")
+    @KafkaListener(topics = "product-cart-quantity-check-response", groupId = "cart-service",
+            containerFactory = "kafkaListenerContainerFactory")
     public void returnNewValueOfCartQuantity(ProductQuantityCheck productQuantityCheck) {
         cartRepository.setItemQuantity(
                 productQuantityCheck.getUserId(),
@@ -72,7 +73,8 @@ public class KafkaEventService {
         return future;
     }
 
-    @KafkaListener(topics = "product-cart-info-response", groupId = "cart-service")
+    @KafkaListener(topics = "product-cart-info-response", groupId = "cart-service",
+            containerFactory = "kafkaListenerContainerFactory")
     public void handleProductInfoResponse(ProductInfoResponse response) {
         CompletableFuture<List<ProductBase>> future = pendingRequests.remove(response.getCorrelationId());
         if (future != null) {

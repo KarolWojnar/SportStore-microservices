@@ -1,6 +1,6 @@
 package com.shop.notificationservice.service;
 
-import com.shop.notificationservice.model.UserDataOperationEvent;
+import com.shop.notificationservice.model.dto.UserDataOperationEvent;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,19 +32,19 @@ public class EmailService {
     )
     public void sendEmailActivation(UserDataOperationEvent registrationEvent) {
         try {
-            String expiration = registrationEvent.expiresAt().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
-            String urlLink = url + "activate/" + registrationEvent.activationCode();
+            String expiration = registrationEvent.getExpiresAt().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+            String urlLink = url + "activate/" + registrationEvent.getActivationCode();
             MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
             helper.setFrom(sender);
-            helper.setTo(registrationEvent.email());
+            helper.setTo(registrationEvent.getEmail());
             helper.setSubject(ConstantStrings.ACTIVATION_EMAIL_SUBJECT);
             helper.setText(ConstantStrings.ACTIVATION_EMAIL_BODY
                     .formatted(urlLink, expiration, urlLink, urlLink), true);
             javaMailSender.send(message);
-            log.info("Activation email sent to {}", registrationEvent.email());
+            log.info("Activation email sent to {}", registrationEvent.getEmail());
         } catch (Exception e) {
-            log.error("Error sending activation email email to {}", registrationEvent.email(), e);
+            log.error("Error sending activation email email to {}", registrationEvent.getEmail(), e);
             throw new RuntimeException("Failed to send activation email", e);
         }
     }
@@ -55,19 +55,19 @@ public class EmailService {
     )
     public void sendEmailResetPassword(UserDataOperationEvent resetPassword) {
         try {
-            String expiration = resetPassword.expiresAt().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
-            String urlLink = url + "reset-password/" + resetPassword.activationCode();
+            String expiration = resetPassword.getExpiresAt().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+            String urlLink = url + "reset-password/" + resetPassword.getActivationCode();
             MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
             helper.setFrom(sender);
-            helper.setTo(resetPassword.email());
+            helper.setTo(resetPassword.getEmail());
             helper.setSubject(ConstantStrings.RESET_PASSWORD_SUBJECT);
             helper.setText(ConstantStrings.RESET_PASSWORD_BODY
                     .formatted(urlLink, expiration, urlLink, urlLink), true);
             javaMailSender.send(message);
-            log.info("Reset password email sent to {}", resetPassword.email());
+            log.info("Reset password email sent to {}", resetPassword.getEmail());
         } catch (Exception e) {
-            log.error("Error sending reset password email to {}", resetPassword.email(), e);
+            log.error("Error sending reset password email to {}", resetPassword.getEmail(), e);
             throw new RuntimeException("Failed to send reset password email", e);
         }
     }

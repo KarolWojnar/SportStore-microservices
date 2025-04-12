@@ -47,6 +47,7 @@ public class CartService {
     }
 
     public void deleteCart(@NonNull String userId) {
+        log.info("Deleting cart for user: {}", userId);
         cartRepository.deleteById(userId);
     }
 
