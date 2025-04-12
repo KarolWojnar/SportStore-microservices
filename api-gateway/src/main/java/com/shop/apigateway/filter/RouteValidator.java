@@ -17,16 +17,18 @@ public class RouteValidator {
             "/api/auth/reset-password",
             "/api/auth/activate/**",
             "/images/**",
-            "/api/products/**",
-            "/api/products/featured"
+            "/api/products/**"
 
     );
 
     public Predicate<ServerHttpRequest> isSecured =
-            request -> openApiEndpoints
-                    .stream()
-                    .noneMatch(uri -> request.getURI()
-                            .getPath()
-                            .contains(uri)
-                    );
+            request -> {
+                String requestPath = request.getURI().getPath();
+                return openApiEndpoints.stream()
+                        .noneMatch(uri -> {
+                            String regex = uri.replaceAll("\\*\\*", ".*");
+                            return requestPath.matches(regex) ||
+                                    requestPath.startsWith(uri.replace("/**", ""));
+                        });
+            };
 }

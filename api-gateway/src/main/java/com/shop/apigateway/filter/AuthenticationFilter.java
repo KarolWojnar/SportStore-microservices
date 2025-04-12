@@ -1,18 +1,18 @@
 package com.shop.apigateway.filter;
 
+import com.shop.apigateway.model.dto.ValidationResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import java.util.List;
 
 
@@ -22,22 +22,18 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
     private final RouteValidator validator;
     private final RestTemplate template;
-    private final RedisTemplate<String, String> redisTemplate;
 
-    public AuthenticationFilter(RouteValidator validator, RestTemplate restTemplate, RedisTemplate<String, String> redisTemplate) {
+    public AuthenticationFilter(RouteValidator validator, RestTemplate restTemplate) {
         super(Config.class);
         this.validator = validator;
         this.template = restTemplate;
-        this.redisTemplate = redisTemplate;
     }
 
     @Override
     public GatewayFilter apply(Config config) {
         return ((exchange, chain) -> {
-            log.info("--START GatewayFilter");
-
             if (validator.isSecured.test(exchange.getRequest())) {
-                if (!exchange.getRequest().getCookies().containsKey(HttpHeaders.AUTHORIZATION)
+                if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)
                         && !exchange.getRequest().getCookies().containsKey("Refresh-token")) {
                     exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                     exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
@@ -49,20 +45,6 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 String authCookie = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
                 HttpCookie refreshCookie = exchange.getRequest().getCookies().get("Refresh-token").get(0);
 
-                if (refreshCookie.getValue() != null && redisTemplate.hasKey("jwt:blacklist:refresh:" + refreshCookie.getValue())) {
-                        log.debug("Refresh token is blacklisted");
-                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                        return exchange.getResponse().writeWith(Mono.just(
-                                exchange.getResponse().bufferFactory().wrap("Unauthorized: Blacklisted refresh token".getBytes())));
-                    }
-
-                if (authCookie != null && redisTemplate.hasKey("jwt:blacklist:access:" + authCookie)) {
-                    log.debug("Access token is blacklisted");
-                    exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                    return exchange.getResponse().writeWith(Mono.just(
-                            exchange.getResponse().bufferFactory().wrap("Unauthorized: Blacklisted access token".getBytes())));
-                }
-
                 try {
                     String cookies = refreshCookie.getName() +
                             "=" +
@@ -73,14 +55,25 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                     assert authCookie != null;
                     headers.add(HttpHeaders.AUTHORIZATION, authCookie);
                     HttpEntity<Object> entity = new HttpEntity<>(headers);
-                    ResponseEntity<String> response = template.exchange(
+                    ResponseEntity<ValidationResponse> response = template.exchange(
                             "http://localhost:8080/api/auth/validate",
                             HttpMethod.GET,
                             entity,
-                            String.class
+                            ValidationResponse.class
                     );
+
                     if (response.getStatusCode() == HttpStatus.OK) {
                         log.info("Authentication successful, proceeding with chain filter");
+                        ValidationResponse validData = response.getBody();
+                        if (validData != null) {
+                            ServerHttpRequest request = exchange.getRequest()
+                                    .mutate()
+                                    .header("X-User-Id", validData.getUserId().toString())
+                                    .header("X-User-Email", validData.getEmail())
+                                    .header("X-User-Role", validData.getRole())
+                                    .build();
+                            exchange = exchange.mutate().request(request).build();
+                        }
                         List<String> cookiesList = response.getHeaders().get(HttpHeaders.SET_COOKIE);
                         if (cookiesList != null) {
                             List<java.net.HttpCookie> httpCookie = java.net.HttpCookie.parse(cookiesList.get(0));
@@ -95,7 +88,6 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                                                 .build());
                             }
                         }
-                        log.info("Successful login");
                         return chain.filter(exchange);
                     }
 
@@ -110,8 +102,6 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                     return exchange.getResponse().writeWith(Flux.just(new DefaultDataBufferFactory().wrap(message.getBytes())));
                 }
             }
-        log.info("--STOP validate Token");
-        log.info("--STOP GatewayFilter");
         return chain.filter(exchange);
 
     });

@@ -39,17 +39,17 @@ services:
     networks:
       - store-network
 
-  frontend-service:
-    build:
-      context: ./frontend-service
-      dockerfile: Dockerfile
-    container_name: frontend-service
-    ports:
-      - '4200:4200'
-    volumes:
-      - ./frontend-service:/app
-    networks:
-      - store-network
+#  frontend-service:
+#    build:
+#      context: ./frontend-service
+#      dockerfile: Dockerfile
+#    container_name: frontend-service
+#    ports:
+#      - '4200:4200'
+#    volumes:
+#      - ./frontend-service:/app
+#    networks:
+#      - store-network
 
   eureka-server:
     container_name: eureka-server
@@ -74,10 +74,6 @@ services:
     depends_on:
       eureka-server:
         condition: service_started
-      customer-db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     networks:
       - store-network
 
@@ -88,14 +84,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8081:8080"
-    env_file:
-      - customer-service/.env
     depends_on:
       eureka-server:
         condition: service_started
       customer-db:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - store-network
@@ -106,7 +98,7 @@ services:
       context: ./notification-service
       dockerfile: Dockerfile
     env_file:
-      - notification-service/.env
+      - .env
     ports:
       - "8085:8080"
     depends_on:
@@ -122,8 +114,6 @@ services:
     build:
       context: ./product-service
       dockerfile: Dockerfile
-    env_file:
-      - product-service/.env
     ports:
       - "8082:8080"
     depends_on:
@@ -132,8 +122,6 @@ services:
       product-db:
         condition: service_healthy
       kafka:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - store-network
@@ -144,7 +132,7 @@ services:
       context: ./auth-service
       dockerfile: Dockerfile
     env_file:
-      - auth-service/.env
+      - .env
     ports:
       - "8083:8080"
     depends_on:
@@ -152,7 +140,22 @@ services:
         condition: service_started
       user-db:
         condition: service_healthy
-      redis:
+      redis-auth:
+        condition: service_healthy
+    networks:
+      - store-network
+
+  cart-service:
+    container_name: cart-service
+    build:
+      context: ./cart-service
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8080"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      customer-db:
         condition: service_healthy
     networks:
       - store-network
@@ -249,7 +252,7 @@ services:
       context: ./api-gateway
       dockerfile: Dockerfile
     env_file:
-      - api-gateway/.env
+      - .env
     ports:
       - "8080:8080"
     depends_on:

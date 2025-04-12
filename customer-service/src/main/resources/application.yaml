@@ -15,12 +15,6 @@ spring:
     loadbalancer:
       enabled: true
 
-jwt:
-  secret: ${JWT_SECRET}
-  exp: 3600000
-  refresh:
-    exp: 604800000
-
 server:
   port: 0
 

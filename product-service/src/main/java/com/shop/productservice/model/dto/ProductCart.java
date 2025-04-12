@@ -2,12 +2,15 @@ package com.shop.productservice.model.dto;
 
 import com.shop.productservice.model.entity.Product;
 import lombok.Data;
+
+import java.math.BigDecimal;
+
 @Data
 public class ProductCart {
     private String productId;
     private String name;
     private String image;
-    private double price;
+    private BigDecimal price;
     private int quantity;
     private int totalQuantity;
 

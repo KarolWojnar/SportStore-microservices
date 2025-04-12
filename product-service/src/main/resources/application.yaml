@@ -15,12 +15,7 @@ spring:
   cloud:
     loadbalancer:
       enabled: true
-
-jwt:
-  secret: ${JWT_SECRET}
-  exp: 3600000
-  refresh:
-    exp: 604800000
+  kafka.bootstrap-servers: kafka:9092
 
 server:
   port: 0

@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: cart-service
+  data:
+    redis:
+      host: redis-cart
+      port: 6379
+  cloud:
+    loadbalancer:
+      enabled: true
+  kafka.bootstrap-servers: kafka:9092
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.http: TRACE
+
+server:
+  port: 0
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: ${spring.application.name}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30

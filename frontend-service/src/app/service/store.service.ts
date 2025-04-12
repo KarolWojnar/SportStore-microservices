@@ -11,6 +11,7 @@ import { Order, OrderBaseInfo, OrderRatingProduct, PaymentLink } from '../model/
 })
 export class StoreService {
   private apiUrl = 'http://localhost:8080/api/products';
+  private apiUrlCart = 'http://localhost:8080/api/cart';
   private apiUrlPayment = 'http://localhost:8080/api/payment';
   private apiUrlOrder = 'http://localhost:8080/api/orders';
 
@@ -42,23 +43,23 @@ export class StoreService {
   }
 
   getCart() {
-    return this.httpClient.get<{products: ProductCart[]}>(`${this.apiUrl}/cart`);
+    return this.httpClient.get<{products: ProductCart[]}>(`${this.apiUrlCart}`);
   }
 
   addToCart(id: string) {
-    return this.httpClient.post(`${this.apiUrl}/cart/add`, id);
+    return this.httpClient.post(`${this.apiUrlCart}/add`, id);
   }
 
   removeOneFromCart(id: string) {
-    return this.httpClient.post(`${this.apiUrl}/cart/remove`, id);
+    return this.httpClient.post(`${this.apiUrlCart}/remove`, id);
   }
 
   removeProduct(id: string): Observable<any> {
-    return this.httpClient.delete(`${this.apiUrl}/cart/${id}`);
+    return this.httpClient.delete(`${this.apiUrlCart}/${id}`);
   }
 
   clearCart(): Observable<any> {
-    return this.httpClient.delete(`${this.apiUrl}/cart`);
+    return this.httpClient.delete(`${this.apiUrlCart}`);
   }
 
   checkout(): Observable<CustomerDto> {

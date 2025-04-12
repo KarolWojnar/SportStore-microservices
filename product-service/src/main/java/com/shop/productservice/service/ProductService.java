@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +38,7 @@ public class ProductService {
                 products.getContent().stream().map(product -> ProductDto.toDto(product, false)).toList(),
                 products.getTotalElements()
         );
+        log.info(String.valueOf(products.getTotalElements()));
         if (page == 0) {
             response.setCategories(categoryService.getCategories().stream().map(CategoryDto::getName).toList());
             response.setMaxPrice(getMaxPrice());
@@ -58,7 +60,7 @@ public class ProductService {
         return products;
     }
 
-    public double getMaxPrice() {
+    public BigDecimal getMaxPrice() {
         return productRepository.findTopByAvailableTrueAndAmountLeftGreaterThanOrderByPriceDesc(0).getPrice();
     }
 
@@ -106,5 +108,4 @@ public class ProductService {
                 "product", ProductDto.toDto(product, true),
                 "relatedProducts", relatedProducts.stream().map(ProductDto::minDto).toList());
     }
-
 }
