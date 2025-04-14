@@ -15,10 +15,10 @@ public class UserInfoDto {
 
     public static UserInfoDto mapToDto(User user) {
         UserInfoDto userInfoDto = new UserInfoDto();
-        userInfoDto.setEmail(user.getEmail());
-        userInfoDto.setRole(user.getRole());
-        userInfoDto.setId(user.getId());
-        userInfoDto.setEnabled(user.isEnabled());
+        userInfoDto.id = user.getId();
+        userInfoDto.email = user.getEmail();
+        userInfoDto.role = user.getRole();
+        userInfoDto.enabled = user.isEnabled();
         return userInfoDto;
     }
 }

@@ -34,6 +34,13 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(ex.getMessage()));
     }
 
+    @ExceptionHandler(CartException.class)
+    public ResponseEntity<ErrorResponse> handleCartException(CartException ex) {
+        log.error("Cart exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<ErrorResponse> handleOrderException(AuthorizationDeniedException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

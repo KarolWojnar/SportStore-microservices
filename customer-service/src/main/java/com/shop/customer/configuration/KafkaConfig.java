@@ -1,4 +1,4 @@
-package com.shop.productservice.configuration;
+package com.shop.customer.configuration;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -44,7 +44,7 @@ public class KafkaConfig {
     public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "product-group");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "customer-service");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
@@ -52,9 +52,7 @@ public class KafkaConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         props.put(JsonDeserializer.TYPE_MAPPINGS,
-                "com.shop.cartservice.model.dto.ProductQuantityCheck:com.shop.productservice.model.dto.ProductQuantityCheck," +
-                "com.shop.cartservice.model.dto.CartValidationRequest:com.shop.productservice.model.dto.CartValidationRequest," +
-                        "com.shop.cartservice.model.dto.ProductInfoRequest:com.shop.productservice.model.dto.ProductInfoRequest");
+                "com.shop.authservice.model.dto.UserInfoResponse:com.shop.customer.model.dto.UserInfoResponse");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }

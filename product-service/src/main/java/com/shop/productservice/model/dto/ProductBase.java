@@ -4,17 +4,12 @@ import com.shop.productservice.model.entity.Product;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.io.Serial;
-import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductBase implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class ProductBase {
     private String productId;
     private int amountLeft;
     private BigDecimal price;
