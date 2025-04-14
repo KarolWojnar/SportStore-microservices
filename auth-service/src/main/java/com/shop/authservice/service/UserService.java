@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.*;
 
 @Slf4j
 @Service
@@ -72,7 +73,7 @@ public class UserService {
 
         String token = getAuth(authRequest, user);
         String refreshToken = jwtUtil.generateToken(user, refreshExp);
-        return getCredentials(token, refreshToken, authRequest.getEmail(), response);
+        return getCredentials(token, refreshToken, user.getId(), response);
     }
 
 
@@ -83,7 +84,7 @@ public class UserService {
         User user = userRepository.findByEmail(email).orElse(getOrCreateUser(email));
         String refreshToken = jwtUtil.generateToken(user, refreshExp);
         String token = jwtUtil.generateToken(user, exp);
-        return getCredentials(token, refreshToken, email, response);
+        return getCredentials(token, refreshToken, user.getId(), response);
     }
 
     public User getOrCreateUser(String email) {
@@ -103,22 +104,24 @@ public class UserService {
         return createdUser;
     }
 
-    private Map<String, Object> getCredentials(String access, String refresh, String email, HttpServletResponse response) {
+    private Map<String, Object> getCredentials(String access, String refresh, Long userId, HttpServletResponse response) {
         Cookie refreshTokenCookie = new Cookie("Refresh-token", refresh);
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
         response.addCookie(refreshTokenCookie);
-        boolean cartNotEmpty = isCartNotEmpty(email);
+        boolean cartNotEmpty = isCartNotEmpty(userId);
         return Map.of("token", access, "cartHasItems", cartNotEmpty);
     }
 
-    private boolean isCartNotEmpty(String email) {
-//        User user = userRepository.findByEmail(email).orElseThrow(() -> new UserException("User not found."));
-//        Cart cart = cartService.getCart(user.getId());
-//        return cart != null && !cart.getProducts().isEmpty();
-        //todo: checkCart
-        return false;
+    private boolean isCartNotEmpty(Long userId) throws RuntimeException {
+        try {
+            return kafkaEventService.checkCartNotEmptyRequest(userId)
+                    .get(2, TimeUnit.SECONDS);
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            log.error("Error while checking cart for user {}", userId, e);
+            return false;
+        }
     }
 
     public String getAuth(AuthUser authRequest, User user) {

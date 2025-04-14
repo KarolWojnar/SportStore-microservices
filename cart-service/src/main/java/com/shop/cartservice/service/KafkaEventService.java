@@ -1,16 +1,18 @@
 package com.shop.cartservice.service;
 
-import com.shop.cartservice.model.dto.ProductQuantityCheck;
-import com.shop.cartservice.model.dto.ProductBase;
-import com.shop.cartservice.model.dto.ProductInfoRequest;
-import com.shop.cartservice.model.dto.ProductInfoResponse;
+import com.shop.cartservice.model.dto.*;
 import com.shop.cartservice.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -79,6 +81,21 @@ public class KafkaEventService {
         CompletableFuture<List<ProductBase>> future = pendingRequests.remove(response.getCorrelationId());
         if (future != null) {
             future.complete(response.getProducts());
+        }
+    }
+
+    @KafkaListener(topics = "cart-items-request", groupId = "cart-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void checkCartHasItems(CartInfoRequest cartInfoRequest) {
+        try {
+            boolean cartHasItems = cartRepository.existsById(cartInfoRequest.getUserId());
+            CartInfoResponse cartInfoResponse = new CartInfoResponse(
+                    cartInfoRequest.getCorrelationId(),
+                    cartHasItems
+            );
+            kafkaTemplate.send("cart-items-response", cartInfoResponse);
+        } catch (Exception e) {
+            log.error("Error processing cart info request", e);
         }
     }
 }

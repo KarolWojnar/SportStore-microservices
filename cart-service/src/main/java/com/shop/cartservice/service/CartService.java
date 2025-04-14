@@ -63,7 +63,11 @@ public class CartService {
             List<String> productIds = new ArrayList<>(cart.getProducts().keySet());
             List<ProductBase> products = kafkaEventService.requestProductInfo(productIds)
                     .get(5, TimeUnit.SECONDS);
-            List<ProductCart> productCarts = products.stream().map(product -> ProductCart.toDto(product, cart.getProducts().get(product.getProductId()))).toList();
+            List<ProductCart> productCarts = products.stream()
+                    .map(product -> ProductCart.toDto(
+                            product,
+                            cart.getProducts().get(product.getProductId()))
+                    ).toList();
             return Map.of("products", productCarts);
         } catch (Exception e) {
             log.error("Error getting cart products", e);

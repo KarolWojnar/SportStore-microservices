@@ -22,6 +22,7 @@ export class CartComponent implements OnInit {
   products: ProductCart[] = [];
   totalPrice = 0;
   errorMessage: string | null = null;
+  loading = false;
 
   constructor(private storeService: StoreService,
               private authState: AuthStateService,
@@ -82,9 +83,11 @@ export class CartComponent implements OnInit {
   }
 
   loadCart(): void {
+    this.loading = true;
     this.storeService.getCart().subscribe({
       next: (response) => {
         this.products = response.products;
+        this.loading = false;
         if (this.products.length === 0) {
           this.authState.setCartHasItems(false);
           localStorage.setItem('cartHasItems', 'false');
@@ -93,6 +96,7 @@ export class CartComponent implements OnInit {
       },
       error: () => {
         console.error('Error loading cart');
+        this.loading = false;
       }
     });
   }

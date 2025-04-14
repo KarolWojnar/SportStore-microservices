@@ -54,7 +54,8 @@ public class KafkaConfig {
         props.put(JsonDeserializer.TYPE_MAPPINGS,
                 "com.shop.productservice.model.dto.ProductQuantityCheck:com.shop.cartservice.model.dto.ProductQuantityCheck," +
                         "com.shop.productservice.model.dto.ProductInfoResponse:com.shop.cartservice.model.dto.ProductInfoResponse," +
-                        "com.shop.productservice.model.dto.ProductBase:com.shop.cartservice.model.dto.ProductBase");
+                        "com.shop.productservice.model.dto.ProductBase:com.shop.cartservice.model.dto.ProductBase," +
+                        "com.shop.authservice.model.dto.CartInfoRequest:com.shop.cartservice.model.dto.CartInfoRequest");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }

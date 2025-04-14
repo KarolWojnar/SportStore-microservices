@@ -11,9 +11,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductInfoRequest implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class ProductInfoRequest {
     private String correlationId;
     private List<String> productIds;
 }
