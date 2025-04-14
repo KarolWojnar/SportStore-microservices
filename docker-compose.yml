@@ -39,17 +39,26 @@ services:
     networks:
       - store-network
 
-#  frontend-service:
-#    build:
-#      context: ./frontend-service
-#      dockerfile: Dockerfile
-#    container_name: frontend-service
-#    ports:
-#      - '4200:4200'
-#    volumes:
-#      - ./frontend-service:/app
-#    networks:
-#      - store-network
+  frontend-service:
+    build:
+      context: ./frontend-service
+      dockerfile: Dockerfile
+    container_name: frontend-service
+    ports:
+      - '4200:4200'
+    volumes:
+      - ./frontend-service:/app
+    networks:
+      - store-network
+
+  stripe-cli:
+    image: stripe/stripe-cli:v1.26.1
+    container_name: stripe-cli
+    command: listen --forward-to http://api-gateway:8080/api/payment/webhook
+    volumes:
+      - stripe-cli-config:/root/.config/stripe
+    networks:
+      - app-network
 
   eureka-server:
     container_name: eureka-server
@@ -273,6 +282,7 @@ volumes:
   redis_cart_data:
   redis_auth_data:
   product_db_data:
+  stripe-cli-config:
 
 networks:
   store-network:

@@ -1,5 +1,6 @@
 package com.shop.customer.controller;
 
+import com.shop.customer.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,4 +10,5 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/customers")
 public class CustomerContoller {
 
+    private final CustomerService customerService;
 }
