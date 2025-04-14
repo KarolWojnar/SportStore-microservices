@@ -52,6 +52,19 @@ spring:
             - name: AuthenticationFilter
               args: {}
 
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: AuthenticationFilter
+              args: { }
+
+        - id: payment-service
+          uri: lb://payment-SERVICE
+          predicates:
+            - Path=/api/payment/**
+
         - id: cart-service
           uri: lb://CART-SERVICE
           predicates:
