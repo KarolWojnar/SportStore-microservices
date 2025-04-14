@@ -2,12 +2,12 @@ package com.shop.authservice.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shop.authservice.model.dto.CartInfoRequest;
-import com.shop.authservice.model.dto.CartInfoResponse;
-import com.shop.authservice.model.dto.UserDataOperationEvent;
+import com.shop.authservice.model.dto.*;
 import com.shop.authservice.model.entity.Activation;
 import com.shop.authservice.model.entity.OutboxEvent;
+import com.shop.authservice.model.entity.User;
 import com.shop.authservice.repository.OutboxEventRepository;
+import com.shop.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -27,6 +27,7 @@ import java.util.concurrent.*;
 public class KafkaEventService {
 
     private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Map<String, CompletableFuture<Boolean>> pendingCartChecks = new ConcurrentHashMap<>();
     private final OutboxEventRepository outboxEventRepository;
@@ -132,6 +133,22 @@ public class KafkaEventService {
         CompletableFuture<Boolean> future = pendingCartChecks.remove(response.getCorrelationId());
         if (future != null) {
             future.complete(response.isCartHasItems());
+        }
+    }
+
+    @KafkaListener(topics = "user-info-request", groupId = "auth-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void getUserInfoResponse(UserInfoRequest response) {
+        try {
+            User user = userRepository.findById(Long.valueOf(response.getUserId())).orElse(null);
+            UserInfoDto userInfoDto = new UserInfoDto();
+            if (user != null) {
+                userInfoDto = UserInfoDto.mapToDto(user);
+            }
+            UserInfoResponse userInfoResponse = new UserInfoResponse(userInfoDto, response.getCorrelationId());
+            kafkaTemplate.send("user-info-response", userInfoResponse);
+        } catch (Exception e) {
+            log.error("Error processing user info request", e);
         }
     }
 }

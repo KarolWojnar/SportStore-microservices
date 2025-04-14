@@ -116,7 +116,7 @@ export class StoreService {
   }
 
   validCart() {
-    return this.httpClient.get<{response: any}>(`${this.apiUrl}/cart/valid`);
+    return this.httpClient.get<{response: any}>(`${this.apiUrlCart}/valid`);
   }
 
   goToPayment(customer: CustomerDto): Observable<PaymentLink> {

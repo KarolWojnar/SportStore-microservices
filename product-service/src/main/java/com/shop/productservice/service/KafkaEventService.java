@@ -1,10 +1,7 @@
 package com.shop.productservice.service;
 
 import com.shop.productservice.exception.ProductException;
-import com.shop.productservice.model.dto.ProductQuantityCheck;
-import com.shop.productservice.model.dto.ProductBase;
-import com.shop.productservice.model.dto.ProductInfoRequest;
-import com.shop.productservice.model.dto.ProductInfoResponse;
+import com.shop.productservice.model.dto.*;
 import com.shop.productservice.model.entity.Product;
 import com.shop.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
@@ -55,6 +51,28 @@ public class KafkaEventService {
             kafkaTemplate.send("product-cart-info-response", response);
         } catch (Exception e) {
             log.error("Error processing product info request", e);
+        }
+    }
+
+    @KafkaListener(topics = "cart-validation-request", groupId = "product-group",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void handleValidationRequest(CartValidationRequest request) {
+        try {
+            List<Product> products = productRepository.findAllById(request.getProducts().keySet());
+
+            for (Product product : products) {
+                int requestedQuantity = request.getProducts().get(product.getId());
+                if (product.getAmountLeft() < requestedQuantity) {
+                    throw new ProductException("Not enough products in stock.");
+                }
+            }
+
+            kafkaTemplate.send("cart-validation-response",
+                    new CartValidationResponse(request.getCorrelationId(), null, null));
+
+        } catch (ProductException e) {
+            kafkaTemplate.send("cart-validation-response",
+                    new CartValidationResponse(request.getCorrelationId(), null, e.getMessage()));
         }
     }
 }

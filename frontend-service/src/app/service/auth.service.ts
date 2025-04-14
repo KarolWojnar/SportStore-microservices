@@ -32,7 +32,7 @@ export class AuthService {
   }
 
   updateCustomerInfo(user: CustomerDetails) {
-    return this.httpClient.put<{user: UserDetails}>(`${this.apiUrl}/auth`, user);
+    return this.httpClient.put<{user: UserDetails}>(`${this.apiUrl}/customers`, user);
   }
 
   login(user: UserDto): Observable<any> {
@@ -100,6 +100,6 @@ export class AuthService {
   }
 
   getUserInfo(): Observable<UserDetails> {
-    return this.httpClient.get<UserDetails>(`${this.apiUrl}/users`);
+    return this.httpClient.get<UserDetails>(`${this.apiUrl}/customers`);
   }
 }

@@ -58,7 +58,7 @@ services:
     volumes:
       - stripe-cli-config:/root/.config/stripe
     networks:
-      - app-network
+      - store-network
 
   eureka-server:
     container_name: eureka-server
@@ -166,6 +166,23 @@ services:
         condition: service_started
       customer-db:
         condition: service_healthy
+    networks:
+      - store-network
+
+  payment-service:
+    container_name: payment-service
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8087:8080"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      customer-service:
+        condition: service_started
     networks:
       - store-network
 

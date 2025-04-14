@@ -1,5 +1,6 @@
 package com.shop.cartservice.service;
 
+import com.shop.cartservice.exception.CartException;
 import com.shop.cartservice.model.dto.ProductBase;
 import com.shop.cartservice.model.dto.ProductCart;
 import com.shop.cartservice.model.entity.Cart;
@@ -8,11 +9,13 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +55,17 @@ public class CartService {
     }
 
     public void validateCart(@NonNull String userId) {
+        try {
+            Cart cart = cartRepository.findById(userId);
+            if (cart == null) {
+                throw new CartException("Cart is empty.");
+            }
+            Map<String, Integer> productIds = new HashMap<>(cart.getProducts());
+            kafkaEventService.validProductsInCart(productIds).get(5, TimeUnit.SECONDS);
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            log.error("Error validating cart", e);
+            throw new CartException("Not enough products in stock.");
+        }
     }
 
     public Map<String, Object> getCart(@NonNull String userId) {
