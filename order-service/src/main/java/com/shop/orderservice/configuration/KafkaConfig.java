@@ -52,7 +52,11 @@ public class KafkaConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         props.put(JsonDeserializer.TYPE_MAPPINGS,
-                "");
+                "com.shop.cartservice.model.dto.ProductsInCartInfoResponse:com.shop.orderservice.model.dto.ProductsInCartInfoResponse," +
+                "com.shop.productservice.model.dto.TotalPriceOfProductsResponse:com.shop.orderservice.model.dto.TotalPriceOfProductsResponse," +
+                "com.shop.productservice.model.dto.ProductPriceByIdResponse:com.shop.orderservice.model.dto.ProductPriceByIdResponse," +
+                "com.shop.paymentservice.model.dto.CreateOrderRequest:com.shop.orderservice.model.dto.CreateOrderRequest," +
+                "com.shop.customer.model.dto.CustomerInfoResponse:com.shop.orderservice.model.dto.CustomerInfoResponse");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }

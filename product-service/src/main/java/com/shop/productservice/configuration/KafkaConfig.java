@@ -54,6 +54,9 @@ public class KafkaConfig {
         props.put(JsonDeserializer.TYPE_MAPPINGS,
                 "com.shop.cartservice.model.dto.ProductQuantityCheck:com.shop.productservice.model.dto.ProductQuantityCheck," +
                 "com.shop.cartservice.model.dto.CartValidationRequest:com.shop.productservice.model.dto.CartValidationRequest," +
+                "com.shop.orderservice.model.dto.TotalPriceOfProductsRequest:com.shop.productservice.model.dto.TotalPriceOfProductsRequest," +
+                "com.shop.paymentservice.model.dto.TotalPriceOfProductsRequest:com.shop.productservice.model.dto.TotalPriceOfProductsRequest," +
+                "com.shop.orderservice.model.dto.ProductPriceByIdRequest:com.shop.productservice.model.dto.ProductPriceByIdRequest," +
                         "com.shop.cartservice.model.dto.ProductInfoRequest:com.shop.productservice.model.dto.ProductInfoRequest");
 
         return new DefaultKafkaConsumerFactory<>(props);

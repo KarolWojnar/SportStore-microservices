@@ -52,7 +52,8 @@ public class KafkaConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         props.put(JsonDeserializer.TYPE_MAPPINGS,
-                "com.shop.authservice.model.dto.UserInfoResponse:com.shop.customer.model.dto.UserInfoResponse");
+                "com.shop.authservice.model.dto.UserInfoResponse:com.shop.customer.model.dto.UserInfoResponse," +
+                "com.shop.orderservice.model.dto.CustomerInfoRequest:com.shop.customer.model.dto.CustomerInfoRequest");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }

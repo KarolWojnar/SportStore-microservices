@@ -56,7 +56,9 @@ public class KafkaConfig {
                         "com.shop.productservice.model.dto.ProductInfoResponse:com.shop.cartservice.model.dto.ProductInfoResponse," +
                         "com.shop.productservice.model.dto.ProductBase:com.shop.cartservice.model.dto.ProductBase," +
                         "com.shop.productservice.model.dto.CartValidationResponse:com.shop.cartservice.model.dto.CartValidationResponse," +
-                        "com.shop.authservice.model.dto.CartInfoRequest:com.shop.cartservice.model.dto.CartInfoRequest");
+                        "com.shop.orderservice.model.dto.ProductsInCartInfoRequest:com.shop.cartservice.model.dto.ProductsInCartInfoRequest," +
+                        "com.shop.authservice.model.dto.CartInfoRequest:com.shop.cartservice.model.dto.CartInfoRequest," +
+                        "com.shop.paymentservice.model.dto.ProductsInCartInfoRequest:com.shop.cartservice.model.dto.ProductsInCartInfoRequest");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
