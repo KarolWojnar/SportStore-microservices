@@ -1,10 +1,12 @@
 package com.shop.orderservice.service;
 
 import com.shop.orderservice.exception.OrderException;
+import com.shop.orderservice.model.OrderStatus;
 import com.shop.orderservice.model.ProductInOrder;
 import com.shop.orderservice.model.dto.*;
 import com.shop.orderservice.model.entity.Order;
 import com.shop.orderservice.repository.OrderRepository;
+import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -182,7 +184,7 @@ public class KafkaEventService {
                     }).collect(Collectors.toList());
 
             Order order = orderRepository.save(new Order(
-                            productInOrder,
+                    productInOrder,
                     orderBaseInfo.getUserId(),
                     orderBaseInfo.getShippingAddress(),
                     orderBaseInfo.getTotalPrice().divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP),
@@ -226,4 +228,49 @@ public class KafkaEventService {
             future.complete(response.getProductPriceDto());
         }
     }
+
+    @KafkaListener(topics = "order-session-request", groupId = "order-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void setSessionIdForOrder(OrderSessionRequest request) {
+        log.info("recived session id.");
+        Order order = orderRepository.findById(Long.valueOf(request.getOrderId())).orElse(null);
+        if (order == null) {
+            kafkaTemplate.send("order-session-response", request.getOrderId());
+            return;
+        }
+        log.info("recived session id.");
+        order.setSessionId(request.getSessionId());
+        orderRepository.save(order);
+        kafkaTemplate.send("order-session-response", request.getCorrelationId());
+    }
+
+    @KafkaListener(topics = "order-paid", groupId = "order-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void orderSessionIdAndSetAsProcessing(String sessionId) {
+        orderRepository.findBySessionId(sessionId).ifPresent(order -> {
+            order.setNewStatus(OrderStatus.PROCESSING);
+            orderRepository.save(order);
+        });
+    }
+
+    @KafkaListener(topics = "order-info-request", groupId = "order-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void orderInfoResponse(OrderRepaymentRequest request) {
+        Order order = orderRepository.findById(Long.valueOf(request.getOrderId())).orElse(null);
+        if (order == null) {
+            OrderRepaymentResponse response = new OrderRepaymentResponse(request.getCorrelationId(), "Order not found.", null);
+            kafkaTemplate.send("order-info-response", response);
+            return;
+        }
+        OrderInfoRepayment orderDto = new OrderInfoRepayment();
+        orderDto.setTotalPrice(order.getTotalPrice());
+        orderDto.setPaymentMethod(SessionCreateParams.PaymentMethodType.valueOf(order.getPaymentMethod()));
+        OrderRepaymentResponse response = new OrderRepaymentResponse(
+                request.getCorrelationId(),
+                null,
+                orderDto
+                );
+        kafkaTemplate.send("order-info-response", response);
+    }
+
 }

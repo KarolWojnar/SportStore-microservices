@@ -23,4 +23,9 @@ public class OrderController {
         orderService.cancelPayment(userId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping
+    public ResponseEntity<?> getAllOrdersByUser(@RequestHeader("X-User-Id") @NonNull String userId) {
+        return ResponseEntity.ok(orderService.getUserOrders(userId));
+    }
 }

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@Builder
 @Entity(name = "orders")
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,6 +29,8 @@ public class Order {
     @ElementCollection
     @CollectionTable(name = "order_products", joinColumns = @JoinColumn(name = "order_id"))
     private List<ProductInOrder> products = new ArrayList<>();
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
     private OrderStatus status = OrderStatus.CREATED;
     @Embedded
     private ShippingAddress orderAddress;
@@ -45,7 +48,7 @@ public class Order {
         this.orderAddress = address;
         this.totalPrice = price;
         this.paymentMethod = paymentMethod;
-
+        this.status = OrderStatus.CREATED;
     }
 
     public void setNewStatus(OrderStatus status) {

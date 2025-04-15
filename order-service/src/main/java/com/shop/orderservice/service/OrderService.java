@@ -4,13 +4,16 @@ import com.shop.orderservice.exception.OrderException;
 import com.shop.orderservice.model.DeliveryTime;
 import com.shop.orderservice.model.ShippingAddress;
 import com.shop.orderservice.model.dto.CustomerDto;
+import com.shop.orderservice.model.dto.OrderBaseInfoDto;
 import com.shop.orderservice.model.dto.OrderDto;
+import com.shop.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +25,7 @@ import java.util.concurrent.TimeoutException;
 public class OrderService {
 
     private final KafkaEventService kafkaEventService;
+    private final OrderRepository orderRepository;
 
     @Transactional(rollbackFor = OrderException.class)
     public OrderDto getSummary(String userId) {
@@ -66,5 +70,9 @@ public class OrderService {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new OrderException("Something went wrong during cancel order.", e);
         }
+    }
+
+    public List<OrderBaseInfoDto> getUserOrders(String userId) {
+        return orderRepository.findAllByUserId(userId).stream().map(OrderBaseInfoDto::mapToDto).toList();
     }
 }

@@ -56,6 +56,8 @@ public class KafkaConfig {
                 "com.shop.productservice.model.dto.TotalPriceOfProductsResponse:com.shop.orderservice.model.dto.TotalPriceOfProductsResponse," +
                 "com.shop.productservice.model.dto.ProductPriceByIdResponse:com.shop.orderservice.model.dto.ProductPriceByIdResponse," +
                 "com.shop.paymentservice.model.dto.CreateOrderRequest:com.shop.orderservice.model.dto.CreateOrderRequest," +
+                "com.shop.paymentservice.model.dto.OrderSessionRequest:com.shop.orderservice.model.dto.OrderSessionRequest," +
+                "com.shop.paymentservice.model.dto.OrderRepaymentRequest:com.shop.orderservice.model.dto.OrderRepaymentRequest," +
                 "com.shop.customer.model.dto.CustomerInfoResponse:com.shop.orderservice.model.dto.CustomerInfoResponse");
 
         return new DefaultKafkaConsumerFactory<>(props);

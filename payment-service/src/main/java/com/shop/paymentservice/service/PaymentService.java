@@ -9,22 +9,23 @@ import com.shop.paymentservice.exception.PaymentException;
 import com.shop.paymentservice.model.DeliveryTime;
 import com.shop.paymentservice.model.dto.OrderBaseInfo;
 import com.shop.paymentservice.model.dto.OrderDto;
+import com.shop.paymentservice.model.dto.OrderInfoRepayment;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 @RequiredArgsConstructor
@@ -60,13 +61,6 @@ public class PaymentService {
         }
     }
 
-    public String createRepayment(OrderDto orderDto) {
-        BigDecimal totalPriceInCents = orderDto.getTotalPrice()
-                .multiply(new BigDecimal("100"))
-                .setScale(0, RoundingMode.HALF_UP);
-        return preparePaymentTemplate(orderDto, totalPriceInCents.longValueExact(), orderDto.getId());
-    }
-
     private String preparePaymentTemplate(OrderDto orderDto, long totalPrice, String orderId) {
         Stripe.apiKey = stripeSecretKey;
         try {
@@ -96,9 +90,13 @@ public class PaymentService {
                             .build();
 
             Session session = com.stripe.model.checkout.Session.create(sessionCreateParams);
+            kafkaEventService.setSessionIdForOrder(orderId, session.getId())
+                    .get(10, TimeUnit.SECONDS);
             return session.getUrl();
         } catch (StripeException e) {
-            throw new PaymentException("Error during payment.");
+            throw new PaymentException("Error during payment.", e);
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            throw new PaymentException("Error with order payment.", e);
         }
     }
 
@@ -137,7 +135,21 @@ public class PaymentService {
         }
     }
 
-    public String createRepayment(String orderId, @NonNull String userId) {
-        return "url";
+    public String createRepayment(String orderId, String userId, String email) {
+        try {
+            OrderInfoRepayment orderInfoDto = kafkaEventService.getOrderInfo(orderId, userId)
+                    .get(5, TimeUnit.SECONDS);
+            OrderDto orderDto = OrderDto.builder()
+                    .email(email)
+                    .paymentMethod(orderInfoDto.getPaymentMethod())
+                    .totalPrice(orderInfoDto.getTotalPrice())
+                    .build();
+            BigDecimal totalPriceInCents = orderDto.getTotalPrice()
+                    .multiply(new BigDecimal("100"))
+                    .setScale(0, RoundingMode.HALF_UP);
+            return preparePaymentTemplate(orderDto, totalPriceInCents.longValueExact(), orderId);
+        } catch (Exception ex) {
+            throw new PaymentException("Error during create repayment", ex);
+        }
     }
 }

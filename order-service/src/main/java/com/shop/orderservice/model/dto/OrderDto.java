@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.shop.orderservice.model.DeliveryTime;
 import com.shop.orderservice.model.OrderStatus;
 import com.shop.orderservice.model.ShippingAddress;
-import com.stripe.param.InvoiceUpdateParams;
+import com.stripe.param.checkout.SessionCreateParams;
 import lombok.Builder;
 import lombok.Data;
 
@@ -27,6 +27,6 @@ public class OrderDto {
     private Date deliveryDate;
     private Date orderDate;
     private DeliveryTime deliveryTime;
-    private InvoiceUpdateParams.PaymentSettings.PaymentMethodType paymentMethod;
+    private SessionCreateParams.PaymentMethodType paymentMethod;
 }
 
