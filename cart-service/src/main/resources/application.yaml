@@ -10,11 +10,6 @@ spring:
       enabled: true
   kafka.bootstrap-servers: kafka:9092
 
-logging:
-  level:
-    org.springframework.web: DEBUG
-    org.springframework.http: TRACE
-
 server:
   port: 0
 

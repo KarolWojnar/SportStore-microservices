@@ -63,11 +63,11 @@ export class StoreService {
   }
 
   checkout(): Observable<CustomerDto> {
-    return this.httpClient.get<CustomerDto>(`${this.apiUrlPayment}/summary`);
+    return this.httpClient.get<CustomerDto>(`${this.apiUrlOrder}/summary`);
   }
 
   cancelPayment(): Observable<any> {
-    return this.httpClient.delete(`${this.apiUrlPayment}/cancel`);
+    return this.httpClient.delete(`${this.apiUrlOrder}/cancel`);
   }
 
   sendRequest(id: string, imgElement: HTMLImageElement) {

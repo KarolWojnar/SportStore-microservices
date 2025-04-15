@@ -103,6 +103,8 @@ export class PaymentComponent implements OnInit, OnDestroy {
           this.isLoading = false;
         },
         error: (err) => {
+          this.isLoading = false;
+          this.errorMessage = 'An error occurred while loading payment data. Try again later.';
           console.error('Error fetching customer data:', err);
         }
       });

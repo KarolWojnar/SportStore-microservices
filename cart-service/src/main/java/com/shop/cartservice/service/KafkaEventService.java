@@ -2,12 +2,14 @@ package com.shop.cartservice.service;
 
 import com.shop.cartservice.exception.CartException;
 import com.shop.cartservice.model.dto.*;
+import com.shop.cartservice.model.entity.Cart;
 import com.shop.cartservice.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -129,4 +131,42 @@ public class KafkaEventService {
             }
         }
     }
+
+    @KafkaListener(topics = "cart-product-block-request", groupId = "cart-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void getProductsAndBlockCart(ProductsInCartInfoRequest request) {
+        Cart cart = cartRepository.findById(request.getUserId());
+        if (cart == null) {
+            throw new CartException("Cart is empty.");
+        }
+        ProductsInCartInfoResponse response = new ProductsInCartInfoResponse(
+                request.getCorrelationId(),
+                cart.getProducts()
+        );
+        cart.setOrderProcessing(request.isBlockCart());
+        cartRepository.save(request.getUserId(), cart);
+        kafkaTemplate.send("cart-product-block-response", response);
+    }
+
+    @KafkaListener(topics = "cart-product-payment-request", groupId = "cart-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void getProducts(ProductsInCartInfoRequest request) {
+        Cart cart = cartRepository.findById(request.getUserId());
+        if (cart == null) {
+            throw new CartException("Cart is empty.");
+        }
+        ProductsInCartInfoResponse response = new ProductsInCartInfoResponse(
+                request.getCorrelationId(),
+                cart.getProducts()
+        );
+        kafkaTemplate.send("cart-product-payment-response", response);
+    }
+
+    @KafkaListener(topics = "cart-delete-request", groupId = "cart-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void deleteCart(ProductsInCartInfoRequest request) {
+        cartRepository.deleteById(request.getUserId());
+        kafkaTemplate.send("cart-delete-response", request.getCorrelationId());
+    }
+
 }

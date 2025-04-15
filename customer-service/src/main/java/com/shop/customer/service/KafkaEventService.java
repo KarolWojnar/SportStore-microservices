@@ -1,8 +1,8 @@
 package com.shop.customer.service;
 
-import com.shop.customer.model.dto.UserInfoDto;
-import com.shop.customer.model.dto.UserInfoRequest;
-import com.shop.customer.model.dto.UserInfoResponse;
+import com.shop.customer.model.dto.*;
+import com.shop.customer.model.entity.Customer;
+import com.shop.customer.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 @Slf4j
 public class KafkaEventService {
 
-
+    private final CustomerRepository customerRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Map<String, CompletableFuture<UserInfoDto>> userInfoChecks = new ConcurrentHashMap<>();
 
@@ -51,5 +51,14 @@ public class KafkaEventService {
         if (future != null) {
             future.complete(userInfoResponse.getUserInfoDto());
         }
+    }
+
+    @KafkaListener(topics = "customer-info-request", groupId = "customer-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void customerInfoRequestListener(CustomerInfoRequest customerInfoRequest) {
+        log.info("Received customer info request: {}", customerInfoRequest.getUserId());
+        Customer customer = customerRepository.findById(Long.valueOf(customerInfoRequest.getUserId())).orElse(null);
+        CustomerInfoResponse response = new CustomerInfoResponse(customerInfoRequest.getCorrelationId(), CustomerDto.toDto(customer));
+        kafkaTemplate.send("customer-info-response", response);
     }
 }

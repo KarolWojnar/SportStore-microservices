@@ -52,6 +52,22 @@ spring:
             - name: AuthenticationFilter
               args: {}
 
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: AuthenticationFilter
+              args: { }
+
+        - id: payment-service
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/api/payment/**
+          filters:
+            - name: AuthenticationFilter
+              args: { }
+
         - id: cart-service
           uri: lb://CART-SERVICE
           predicates:
@@ -79,8 +95,3 @@ eureka:
       defaultZone: http://eureka-server:8761/eureka/
   instance:
     prefer-ip-address: true
-
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.web.reactive: DEBUG
