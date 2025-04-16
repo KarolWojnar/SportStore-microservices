@@ -172,4 +172,29 @@ public class KafkaEventService {
             log.error("Error processing order product unlock request", e);
         }
     }
+
+    @KafkaListener(topics = "products-by-id-request", groupId = "product-group",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void getProductsByIdsRequest(ProductsByIdRequest request) {
+        try {
+            List<Product> products = productRepository.findAllById(request.getProducts());
+            List<ProductOrderDto> productBases = products.stream()
+                    .map(ProductOrderDto::mapToDto)
+                    .toList();
+
+            ProductsByIdResponse response = new ProductsByIdResponse(
+                    request.getCorrelationId(),
+                    null,
+                    productBases
+            );
+            kafkaTemplate.send("products-by-id-response", response);
+        } catch (Exception e) {
+            ProductsByIdResponse response = new ProductsByIdResponse(
+                    request.getCorrelationId(),
+                    e.getMessage(),
+                    null
+            );
+            kafkaTemplate.send("products-by-id-response", response);
+        }
+    }
 }

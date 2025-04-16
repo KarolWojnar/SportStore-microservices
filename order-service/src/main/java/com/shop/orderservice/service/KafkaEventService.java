@@ -35,6 +35,7 @@ public class KafkaEventService {
     private final Map<String, CompletableFuture<BigDecimal>> requestsForTotalPrice = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Map<String, BigDecimal>>> requestsForTotalPriceItem = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Void>> requestsForUnlockProducts = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<List<ProductOrderDto>>> requestsForProducts = new ConcurrentHashMap<>();
 
     public CompletableFuture<CustomerDto> optCustomer(String userId) {
         String correlationId = UUID.randomUUID().toString();
@@ -273,4 +274,36 @@ public class KafkaEventService {
         kafkaTemplate.send("order-info-response", response);
     }
 
+
+    public CompletableFuture<List<ProductOrderDto>> getProductsByIds(List<String> productIds) {
+        String correlationId = UUID.randomUUID().toString();
+        CompletableFuture<List<ProductOrderDto>> future = new CompletableFuture<>();
+        requestsForProducts.put(correlationId, future);
+        try {
+            ProductsByIdRequest request = new ProductsByIdRequest(correlationId, productIds);
+            kafkaTemplate.send("products-by-id-request", request);
+            ScheduledExecutorService scheduler = java.util.concurrent.Executors.newScheduledThreadPool(1);
+            scheduler.schedule(() -> {
+                requestsForProducts.remove(correlationId);
+                future.completeExceptionally(new RuntimeException("Timeout waiting for products"));
+            }, 5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            requestsForProducts.remove(correlationId);
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
+    @KafkaListener(topics = "products-by-id-response", groupId = "order-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void productsByIdResponse(ProductsByIdResponse response) {
+        CompletableFuture<List<ProductOrderDto>> future = requestsForProducts.remove(response.getCorrelationId());
+        if (response.getErrorMessage() != null) {
+            future.completeExceptionally(new OrderException(response.getErrorMessage()));
+            return;
+        }
+        if (future != null) {
+            future.complete(response.getProductDto());
+        }
+    }
 }

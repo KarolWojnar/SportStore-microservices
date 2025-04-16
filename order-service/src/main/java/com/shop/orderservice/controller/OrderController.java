@@ -28,4 +28,11 @@ public class OrderController {
     public ResponseEntity<?> getAllOrdersByUser(@RequestHeader("X-User-Id") @NonNull String userId) {
         return ResponseEntity.ok(orderService.getUserOrders(userId));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getOrderById(@RequestHeader("X-User-Id") @NonNull String userId,
+                                          @RequestHeader("X-User-Email") @NonNull String email,
+                                          @PathVariable("id") @NonNull String orderId) {
+        return ResponseEntity.ok(orderService.getOrderById(userId, orderId, email));
+    }
 }

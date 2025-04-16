@@ -2,10 +2,10 @@ package com.shop.orderservice.service;
 
 import com.shop.orderservice.exception.OrderException;
 import com.shop.orderservice.model.DeliveryTime;
+import com.shop.orderservice.model.ProductInOrder;
 import com.shop.orderservice.model.ShippingAddress;
-import com.shop.orderservice.model.dto.CustomerDto;
-import com.shop.orderservice.model.dto.OrderBaseInfoDto;
-import com.shop.orderservice.model.dto.OrderDto;
+import com.shop.orderservice.model.dto.*;
+import com.shop.orderservice.model.entity.Order;
 import com.shop.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +26,7 @@ public class OrderService {
 
     private final KafkaEventService kafkaEventService;
     private final OrderRepository orderRepository;
+    private final OrderMapper orderMapper;
 
     @Transactional(rollbackFor = OrderException.class)
     public OrderDto getSummary(String userId) {
@@ -74,5 +75,22 @@ public class OrderService {
 
     public List<OrderBaseInfoDto> getUserOrders(String userId) {
         return orderRepository.findAllByUserId(userId).stream().map(OrderBaseInfoDto::mapToDto).toList();
+    }
+
+    public OrderDto getOrderById(String userId, String orderId, String email) {
+        try {
+            Order order = orderRepository.findByIdAndUserId(Long.valueOf(orderId), userId)
+                    .orElseThrow(() -> new OrderException("Order not found."));
+            CustomerDto customerDto = kafkaEventService.optCustomer(userId).join();
+            List<String> productIds = order.getProducts().stream().map(ProductInOrder::getProductId).toList();
+            List<ProductOrderDto> products = kafkaEventService.getProductsByIds(productIds)
+                    .join();
+            List<ProductInOrder> productsInOrder = order.getProducts();
+
+
+            return orderMapper.mapToOrderDto(order, customerDto, email, products, productsInOrder);
+        } catch (Exception e) {
+            throw new OrderException("Something went wrong during get order details.", e);
+        }
     }
 }
