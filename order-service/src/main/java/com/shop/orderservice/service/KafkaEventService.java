@@ -9,17 +9,16 @@ import com.shop.orderservice.repository.OrderRepository;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +35,7 @@ public class KafkaEventService {
     private final Map<String, CompletableFuture<Map<String, BigDecimal>>> requestsForTotalPriceItem = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Void>> requestsForUnlockProducts = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<List<ProductOrderDto>>> requestsForProducts = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<String>> requestsForEmails = new ConcurrentHashMap<>();
 
     public CompletableFuture<CustomerDto> optCustomer(String userId) {
         String correlationId = UUID.randomUUID().toString();
@@ -245,13 +245,104 @@ public class KafkaEventService {
         kafkaTemplate.send("order-session-response", request.getCorrelationId());
     }
 
+    @Transactional
     @KafkaListener(topics = "order-paid", groupId = "order-service",
             containerFactory = "kafkaListenerContainerFactory")
     public void orderSessionIdAndSetAsProcessing(String sessionId) {
-        orderRepository.findBySessionId(sessionId).ifPresent(order -> {
-            order.setNewStatus(OrderStatus.PROCESSING);
-            orderRepository.save(order);
-        });
+        try {
+            orderRepository.findBySessionId(sessionId).ifPresent(order -> {
+                OrderSentEmailDto orderSentEmailDto = findAllOrderData(order);
+                order.setNewStatus(OrderStatus.PROCESSING);
+                orderRepository.save(order);
+                kafkaTemplate.send("order-sent-request", orderSentEmailDto);
+            });
+        } catch (Exception e) {
+            throw new OrderException("Something went wrong during setting order status.", e);
+        }
+    }
+
+    public void sendOrderDeliveredEmail(Order order) {
+        try {
+            Hibernate.initialize(order.getProducts());
+            OrderSentEmailDto orderSentEmailDto = findAllOrderData(order);
+            List<String> productIds = order.getProducts().stream().map(ProductInOrder::getProductId).toList();
+            List<ProductOrderDto> products = getProductsByIds(productIds).get(5, TimeUnit.SECONDS);
+            List<ProductInfoEmail> productInfoEmails = products.stream().map(product -> {
+                ProductInfoEmail productInfoEmail = new ProductInfoEmail();
+                productInfoEmail.setName(product.getName());
+                productInfoEmail.setAmount(order.getProducts().stream()
+                        .filter(p -> p.getProductId().equals(product.getId()))
+                        .findFirst()
+                        .map(ProductInOrder::getAmount)
+                        .orElse(0));
+                productInfoEmail.setPrice(order.getProducts().stream()
+                        .filter(p -> p.getProductId().equals(product.getId()))
+                        .findFirst()
+                        .map(ProductInOrder::getPrice)
+                        .orElse(BigDecimal.ZERO));
+                return productInfoEmail;
+            }).toList();
+            orderSentEmailDto.setProducts(productInfoEmails);
+            kafkaTemplate.send("order-delivered-request", orderSentEmailDto);
+        } catch (Exception e) {
+            throw new OrderException("Something went wrong during send email.", e);
+        }
+    }
+
+    private OrderSentEmailDto findAllOrderData(Order order) {
+        try {
+            OrderSentEmailDto orderSentEmailDto = new OrderSentEmailDto();
+            orderSentEmailDto.setOrderId(String.valueOf(order.getId()));
+            orderSentEmailDto.setOrderDate(order.getOrderDate());
+            orderSentEmailDto.setCity(order.getOrderAddress().getCity());
+            orderSentEmailDto.setAddress(order.getOrderAddress().getAddress());
+            orderSentEmailDto.setZipCode(order.getOrderAddress().getZipCode());
+            orderSentEmailDto.setCountry(order.getOrderAddress().getCountry());
+            orderSentEmailDto.setTotalPrice(order.getTotalPrice());
+            CustomerDto customerDto = optCustomer(order.getUserId()).get(5, TimeUnit.SECONDS);
+            String email = getUserEmail(order.getUserId()).get(5, TimeUnit.SECONDS);
+            orderSentEmailDto.setEmail(email);
+            orderSentEmailDto.setFirstName(customerDto.getFirstName());
+            orderSentEmailDto.setLastName(customerDto.getLastName());
+            return orderSentEmailDto;
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new OrderException("Something went wrong during send email.", e);
+        }
+
+    }
+
+    private CompletableFuture<String> getUserEmail(String id) {
+        String correlationId = UUID.randomUUID().toString();
+        CompletableFuture<String> future = new CompletableFuture<>();
+        requestsForEmails.put(correlationId, future);
+        Long userId = Long.valueOf(id);
+
+        try {
+            UserEmailRequest request = new UserEmailRequest(correlationId, userId);
+            kafkaTemplate.send("user-email-request", request);
+            ScheduledExecutorService scheduler = java.util.concurrent.Executors.newScheduledThreadPool(1);
+            scheduler.schedule(() -> {
+                requestsForEmails.remove(correlationId);
+                future.completeExceptionally(new RuntimeException("Timeout waiting for email"));
+            }, 5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            requestsForEmails.remove(correlationId);
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
+    @KafkaListener(topics = "user-email-response", groupId = "order-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void userEmailResponse(UserEmailResponse response) {
+        CompletableFuture<String> future = requestsForEmails.remove(response.getCorrelationId());
+        if (response.getErrorMessage() != null) {
+            future.completeExceptionally(new OrderException(response.getErrorMessage()));
+            return;
+        }
+        if (future != null) {
+            future.complete(response.getEmail());
+        }
     }
 
     @KafkaListener(topics = "order-info-request", groupId = "order-service",

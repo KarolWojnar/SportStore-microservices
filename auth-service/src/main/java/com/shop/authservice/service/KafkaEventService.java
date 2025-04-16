@@ -151,4 +151,20 @@ public class KafkaEventService {
             log.error("Error processing user info request", e);
         }
     }
+
+    @KafkaListener(topics = "user-email-request", groupId = "auth-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void getUserInfoResponse(UserEmailRequest request) {
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        UserEmailResponse userEmailResponse = new UserEmailResponse();
+        userEmailResponse.setCorrelationId(request.getCorrelationId());
+        if (user == null) {
+            userEmailResponse.setEmail(null);
+            userEmailResponse.setErrorMessage("User not found");
+            kafkaTemplate.send("user-email-response", userEmailResponse);
+            return;
+        }
+        userEmailResponse.setEmail(user.getEmail());
+        kafkaTemplate.send("user-email-response", userEmailResponse);
+    }
 }

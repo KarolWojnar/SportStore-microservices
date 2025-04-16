@@ -31,7 +31,8 @@ public class KafkaConfig {
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 
         props.put(JsonDeserializer.TYPE_MAPPINGS,
-                "com.shop.authservice.model.dto.UserDataOperationEvent:com.shop.notificationservice.model.dto.UserDataOperationEvent");
+                "com.shop.authservice.model.dto.UserDataOperationEvent:com.shop.notificationservice.model.dto.UserDataOperationEvent," +
+                "com.shop.orderservice.model.dto.OrderSentEmailDto:com.shop.notificationservice.model.dto.OrderSentEmailDto");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }

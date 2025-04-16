@@ -10,10 +10,12 @@ import com.shop.orderservice.model.entity.Order;
 import com.shop.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -30,6 +32,8 @@ public class OrderService {
 
     private final KafkaEventService kafkaEventService;
     private final OrderRepository orderRepository;
+    public static final Duration ORDER_CHANGE = Duration.ofDays(2);
+    public static final Duration ORDER_DELETE = Duration.ofDays(1);
     private final OrderMapper orderMapper;
 
     @Transactional(rollbackFor = OrderException.class)
@@ -91,7 +95,6 @@ public class OrderService {
                     .join();
             List<ProductInOrder> productsInOrder = order.getProducts();
 
-
             return orderMapper.mapToOrderDto(order, customerDto, email, products, productsInOrder);
         } catch (Exception e) {
             throw new OrderException("Something went wrong during get order details.", e);
@@ -136,5 +139,48 @@ public class OrderService {
         }
         order.setStatus(OrderStatus.REFUNDED);
         orderRepository.save(order);
+    }
+
+    @Scheduled(cron = "*/5 * * * * *")
+    public void changeOrderStatus() {
+        Date minusTwoDays = new Date(System.currentTimeMillis() - ORDER_CHANGE.toMillis());
+        List<Order> orders = orderRepository
+                .findAllByStatusIsNotAndLastModifiedBefore(OrderStatus.CREATED, minusTwoDays);
+        for (Order order : orders) {
+            order.setNextStatus();
+            if (order.getStatus() == OrderStatus.DELIVERED && !order.isEmailSent()) {
+                kafkaEventService.sendOrderDeliveredEmail(order);
+                order.setEmailSent(true);
+            }
+        }
+        log.info("Changed {} orders status. date: {}", orders.size(),
+                Date.from(Instant.now()));
+        orderRepository.saveAll(orders);
+    }
+
+    @Scheduled(cron = "0 */15 * * * *")
+    public void deleteNotPaidOrders() {
+        Date minusDays = new Date(System.currentTimeMillis() - ORDER_DELETE.toMillis());
+        List<Order> orders = orderRepository.findAllByStatusAndOrderDateBefore(OrderStatus.CREATED, minusDays);
+        handleNotPaidOrders(orders);
+        log.info("Deleted {} orders. date: {}", orders.size(),
+                Date.from(Instant.now()));
+    }
+
+    public void handleNotPaidOrders(List<Order> orders) {
+        for (Order order : orders) {
+            try {
+            Map<String, Integer> products = order.getProducts().stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                            ProductInOrder::getProductId,
+                            ProductInOrder::getAmount
+                    ));
+            kafkaEventService.unlockProducts(products).get(5, TimeUnit.SECONDS);
+            orderRepository.delete(order);
+            } catch (Exception e) {
+                throw new OrderException("Something went wrong during delete order.", e);
+            }
+        }
+
     }
 }
