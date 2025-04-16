@@ -167,8 +167,12 @@ public class KafkaEventService {
             }
 
             productRepository.saveAll(products);
+            kafkaTemplate.send("order-product-unlock-response",
+                    new TotalPriceOfProductsResponse(request.getCorrelationId(), null, null));
 
         } catch (Exception e) {
+            kafkaTemplate.send("order-product-unlock-response",
+                    new TotalPriceOfProductsResponse(request.getCorrelationId(), null, e.getMessage()));
             log.error("Error processing order product unlock request", e);
         }
     }

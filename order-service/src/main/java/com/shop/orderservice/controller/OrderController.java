@@ -35,4 +35,19 @@ public class OrderController {
                                           @PathVariable("id") @NonNull String orderId) {
         return ResponseEntity.ok(orderService.getOrderById(userId, orderId, email));
     }
+
+    @PatchMapping("/cancel/{id}")
+    public ResponseEntity<?> cancelOrder(@RequestHeader("X-User-Id") @NonNull String userId,
+                                         @RequestHeader("X-User-Role") @NonNull String role,
+                                         @PathVariable String id) {
+        orderService.cancelOrder(id, role, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/refund/{id}")
+    public ResponseEntity<?> refundOrder(@RequestHeader("X-User-Id") @NonNull String userId,
+                                         @PathVariable String id) {
+        orderService.refundOrder(id, userId);
+        return ResponseEntity.noContent().build();
+    }
 }
