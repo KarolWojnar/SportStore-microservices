@@ -22,6 +22,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryService categoryService;
+    private final KafkaEventService kafkaEventService;
 
     public ProductsListInfo getProducts(int page, int size, String sort, String direction,
                                         String search, int minPrice, int maxPrice, List<String> categories, boolean isAdmin) {
@@ -72,25 +76,27 @@ public class ProductService {
 
     @Transactional(rollbackFor = ProductException.class)
     public void rateProduct(RateProductDto rateProductDto) {
-        Product product = productRepository.findById(rateProductDto.getProductId()).orElseThrow(() -> new ProductException("Product not found."));
-        if (rateProductDto.getRating() < 1 || rateProductDto.getRating() > 5) {
-            throw new ProductException("Rating must be between 1 and 5.");
-        }
-        int key = 0;
-        double value = 0;
-        for (Map.Entry<Integer, Double> entry : product.getRatings().entrySet()) {
-            key = entry.getKey();
-            value = entry.getValue();
-        }
+        Product product = productRepository.findById(rateProductDto.getProductId())
+                .orElseThrow(() -> new ProductException("Product not found."));
 
-        double finalRating = ((value * key) + (double) rateProductDto.getRating()) / (key + 1);
+        Map<Integer, Double> ratings = product.getRatings();
+        int totalRatings = ratings.isEmpty() ? 0 : Collections.max(ratings.keySet());
+        double currentAvg = ratings.getOrDefault(totalRatings, 0.0);
+
+        double finalRating = ((totalRatings * currentAvg) + (double) rateProductDto.getRating()) / (totalRatings + 1);
         finalRating = Math.round(finalRating * 100.0) / 100.0;
 
-        product.getRatings().put(key + 1, finalRating);
-        product.getRatings().remove(key);
+        double finalRating1 = finalRating;
+        product.getRatings().putIfAbsent(totalRatings + 1, finalRating1);
+        product.getRatings().remove(totalRatings);
 
-        //todo: set order product as rated
-//        orderService.setOrderProductAsRated(rateProductDto.getOrderId(), rateProductDto.getProductId());
+        try {
+            kafkaEventService
+                    .setOrderProductAsRated(rateProductDto.getOrderId(), rateProductDto.getProductId())
+                    .get(5, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new ProductException("Error while rating product.");
+        }
         productRepository.save(product);
     }
 

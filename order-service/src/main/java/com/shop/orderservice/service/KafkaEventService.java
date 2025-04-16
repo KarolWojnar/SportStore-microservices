@@ -253,12 +253,19 @@ public class KafkaEventService {
             orderRepository.findBySessionId(sessionId).ifPresent(order -> {
                 OrderSentEmailDto orderSentEmailDto = findAllOrderData(order);
                 order.setNewStatus(OrderStatus.PROCESSING);
+                incrementItemsSold(order.getProducts());
                 orderRepository.save(order);
                 kafkaTemplate.send("order-sent-request", orderSentEmailDto);
             });
         } catch (Exception e) {
             throw new OrderException("Something went wrong during setting order status.", e);
         }
+    }
+
+    private void incrementItemsSold(List<ProductInOrder> order) {
+        Map<String, Integer> products = order.stream()
+                .collect(Collectors.toMap(ProductInOrder::getProductId, ProductInOrder::getAmount));
+        kafkaTemplate.send("product-sold-request", products);
     }
 
     public void sendOrderDeliveredEmail(Order order) {
@@ -396,5 +403,24 @@ public class KafkaEventService {
         if (future != null) {
             future.complete(response.getProductDto());
         }
+    }
+
+    @Transactional
+    @KafkaListener(topics = "order-product-rated-request", groupId = "order-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void orderProductRatedEvent(OrderProductRatedRequest request) {
+        try {
+            Order order = orderRepository.findById(Long.valueOf(request.getOrderId())).orElseThrow(() -> new OrderException("Order not found."));
+            Hibernate.initialize(order.getProducts());
+            ProductInOrder product = order.getProducts().stream()
+                    .filter(p -> p.getProductId().equals(request.getProductId()))
+                    .findFirst()
+                    .orElseThrow(() -> new OrderException("Product not found."));
+            product.setRated(true);
+            orderRepository.save(order);
+        } catch (Exception e) {
+            throw new OrderException("Something went wrong during setting order status.", e);
+        }
+        kafkaTemplate.send("order-product-rated-response", request.getCorrelationId());
     }
 }

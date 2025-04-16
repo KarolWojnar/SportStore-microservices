@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = {"products"})
     List<Order> findAllByStatusIsNotAndLastModifiedBefore(OrderStatus status, Date lastModified);
+    @EntityGraph(attributePaths = {"products"})
     Optional<Order> findBySessionId(String sessionId);
     List<Order> findAllByUserId(String userId);
     Optional<Order> findByIdAndUserId(Long id, String id1);
