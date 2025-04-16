@@ -15,6 +15,10 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,7 @@ public class KafkaEventService {
 
     private final ProductRepository productRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final Map<String, CompletableFuture<OrderProductRatedRequest>> orderProductAsRatedMap = new ConcurrentHashMap<>();
 
     @KafkaListener(topics = "product-cart-quantity-check-request", groupId = "product-group",
             containerFactory = "kafkaListenerContainerFactory")
@@ -167,9 +172,81 @@ public class KafkaEventService {
             }
 
             productRepository.saveAll(products);
+            kafkaTemplate.send("order-product-unlock-response",
+                    new TotalPriceOfProductsResponse(request.getCorrelationId(), null, null));
 
         } catch (Exception e) {
+            kafkaTemplate.send("order-product-unlock-response",
+                    new TotalPriceOfProductsResponse(request.getCorrelationId(), null, e.getMessage()));
             log.error("Error processing order product unlock request", e);
+        }
+    }
+
+    @KafkaListener(topics = "products-by-id-request", groupId = "product-group",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void getProductsByIdsRequest(ProductsByIdRequest request) {
+        try {
+            List<Product> products = productRepository.findAllById(request.getProducts());
+            List<ProductOrderDto> productBases = products.stream()
+                    .map(ProductOrderDto::mapToDto)
+                    .toList();
+
+            ProductsByIdResponse response = new ProductsByIdResponse(
+                    request.getCorrelationId(),
+                    null,
+                    productBases
+            );
+            kafkaTemplate.send("products-by-id-response", response);
+        } catch (Exception e) {
+            ProductsByIdResponse response = new ProductsByIdResponse(
+                    request.getCorrelationId(),
+                    e.getMessage(),
+                    null
+            );
+            kafkaTemplate.send("products-by-id-response", response);
+        }
+    }
+
+    @KafkaListener(topics = "product-sold-request", groupId = "product-group",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void incrementSoldItems(Map<String, Integer> request) {
+        try {
+            List<Product> products = productRepository.findAllById(request.keySet());
+            for (Product product : products) {
+                product.setOrders(product.getOrders() + request.get(product.getId()));
+            }
+            productRepository.saveAll(products);
+        } catch (Exception e) {
+            log.error("Error processing product sold request", e);
+        }
+    }
+
+    public CompletableFuture<OrderProductRatedRequest> setOrderProductAsRated(String orderId, String productId) {
+        String correlationId = UUID.randomUUID().toString();
+        CompletableFuture<OrderProductRatedRequest> future = new CompletableFuture<>();
+        orderProductAsRatedMap.put(correlationId, future);
+
+        try {
+            OrderProductRatedRequest request = new OrderProductRatedRequest(correlationId, orderId, productId);
+            kafkaTemplate.send("order-product-rated-request", request);
+            ScheduledExecutorService scheduler = java.util.concurrent.Executors.newScheduledThreadPool(1);
+            scheduler.schedule(() -> {
+                orderProductAsRatedMap.remove(correlationId);
+                future.completeExceptionally(new RuntimeException("Timeout waiting for rating"));
+            }, 5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            orderProductAsRatedMap.remove(correlationId);
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
+    @KafkaListener(topics = "order-product-rated-response", groupId = "product-group",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void handleOrderProductRatedResponse(String correlationId) {
+        CompletableFuture<OrderProductRatedRequest> future = orderProductAsRatedMap.remove(correlationId);
+        if (future != null) {
+            future.complete(null);
         }
     }
 }

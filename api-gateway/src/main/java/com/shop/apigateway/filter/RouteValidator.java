@@ -17,7 +17,8 @@ public class RouteValidator {
             "/api/auth/reset-password",
             "/api/auth/activate/**",
             "/images/**",
-            "/api/products/**"
+            "/api/products/**",
+            "/api/payment/webhook"
 
     );
 

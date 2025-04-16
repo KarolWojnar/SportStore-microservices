@@ -1,5 +1,6 @@
 package com.shop.notificationservice.service;
 
+import com.shop.notificationservice.model.dto.OrderSentEmailDto;
 import com.shop.notificationservice.model.dto.UserDataOperationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,5 +26,19 @@ public class KafkaEventService {
     public void handleResetPasswordEvent(UserDataOperationEvent registrationEvent) {
         log.info("Received reset password event for email: {}", registrationEvent.getEmail());
         emailService.sendEmailResetPassword(registrationEvent);
+    }
+
+    @KafkaListener(topics = "order-sent-request", groupId = "notification-group",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void handleOrderSentEvent(OrderSentEmailDto orderSentEmailDto) {
+        log.info("Received order sent event for email: {}", orderSentEmailDto.getEmail());
+        emailService.sendEmailWithOrderDetails(orderSentEmailDto);
+    }
+
+    @KafkaListener(topics = "order-delivered-request", groupId = "notification-group",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void handleOrderDeliveredListener(OrderSentEmailDto orderSentEmailDto) {
+        log.info("Received order delivered event for email: {}", orderSentEmailDto.getEmail());
+        emailService.sendEmailToDelivered(orderSentEmailDto);
     }
 }

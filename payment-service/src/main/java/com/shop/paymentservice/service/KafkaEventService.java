@@ -27,9 +27,11 @@ import java.util.concurrent.ScheduledExecutorService;
 public class KafkaEventService {
 
     private final Map<String, CompletableFuture<BigDecimal>> requestsForTotalPrice = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<OrderInfoRepayment>> requestsForOrderInfo = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Map<String, Integer>>> requestsForCart = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<String>> requestsForCreateOrder = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Void>> requestsForDeleteCart = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<Void>> requestsForOrderSession = new ConcurrentHashMap<>();
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final OutboxRepository outboxRepository;
 
@@ -175,6 +177,66 @@ public class KafkaEventService {
         CompletableFuture<Void> future = requestsForDeleteCart.remove(correlationId);
         if (future != null) {
             future.complete(null);
+        }
+    }
+
+    public CompletableFuture<Void> setSessionIdForOrder(String orderId, String sessionId) {
+        String correlationId = UUID.randomUUID().toString();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        requestsForOrderSession.put(correlationId, future);
+        log.info("123");
+        try {
+            OrderSessionRequest request = new OrderSessionRequest(correlationId, sessionId, orderId);
+            kafkaTemplate.send("order-session-request", request);
+            ScheduledExecutorService scheduler = java.util.concurrent.Executors.newScheduledThreadPool(1);
+            scheduler.schedule(() -> {
+                future.completeExceptionally(new RuntimeException("Timeout waiting for order"));
+            }, 10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
+    @KafkaListener(topics = "order-session-response", groupId = "order-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void orderSessionResponse(String correlationId) {
+        log.info("order saved");
+        CompletableFuture<Void> future = requestsForOrderSession.remove(correlationId);
+        if (future != null) {
+            future.complete(null);
+        }
+    }
+
+    public CompletableFuture<OrderInfoRepayment> getOrderInfo(String orderId, String userId) {
+        String correlationId = UUID.randomUUID().toString();
+        CompletableFuture<OrderInfoRepayment> future = new CompletableFuture<>();
+        requestsForOrderInfo.put(correlationId, future);
+        try {
+            OrderRepaymentRequest request = new OrderRepaymentRequest(orderId, userId, correlationId);
+            kafkaTemplate.send("order-info-request", request);
+            ScheduledExecutorService scheduler = java.util.concurrent.Executors.newScheduledThreadPool(1);
+            scheduler.schedule(() -> {
+                future.completeExceptionally(new RuntimeException("Timeout waiting for order"));
+            }, 10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
+    @KafkaListener(topics = "order-info-response", groupId = "order-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void orderInfoResponse(OrderRepaymentResponse order) {
+        CompletableFuture<OrderInfoRepayment> future = requestsForOrderInfo.remove(order.getCorrelationId());
+        if (order.getErrorMessage() != null) {
+            future.completeExceptionally(new PaymentException(order.getErrorMessage()));
+            return;
+        }
+        log.info(String.valueOf(order.getOrderInfoRepayment().getTotalPrice()));
+        log.info(String.valueOf(order.getOrderInfoRepayment().getPaymentMethod()));
+        if (future != null) {
+            future.complete(order.getOrderInfoRepayment());
         }
     }
 }

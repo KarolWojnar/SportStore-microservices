@@ -27,8 +27,9 @@ public class PaymentController {
 
     @PostMapping("/repay")
     public ResponseEntity<?> createRepayment(@RequestHeader("X-User-Id") @NonNull String userId,
+                                             @RequestHeader("X-User-Email") @NonNull String email,
                                              @RequestBody String orderId) {
-        return ResponseEntity.ok(new UrlPaymentResponse(paymentService.createRepayment(orderId, userId)));
+        return ResponseEntity.ok(new UrlPaymentResponse(paymentService.createRepayment(orderId, userId, email)));
     }
 
     @Async
