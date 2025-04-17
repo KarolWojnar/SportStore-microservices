@@ -1,13 +1,13 @@
 package com.shop.productservice.model.dto;
 
 import com.shop.productservice.model.entity.Category;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @AllArgsConstructor
 @Getter
 @Setter
+@Data
+@NoArgsConstructor
 public class CategoryDto {
     private String name;
 

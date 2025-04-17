@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { AdminService } from '../../service/admin.service';
-import { UserDetails, UserRole, UserStatus } from '../../model/user-dto';
+import { UserDetails, UserStatus } from '../../model/user-dto';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';

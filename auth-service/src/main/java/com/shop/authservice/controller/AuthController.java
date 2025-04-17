@@ -1,6 +1,5 @@
 package com.shop.authservice.controller;
 
-import com.shop.authservice.model.Roles;
 import com.shop.authservice.model.SuccessResponse;
 import com.shop.authservice.model.dto.*;
 import com.shop.authservice.service.UserService;

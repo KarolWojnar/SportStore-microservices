@@ -10,6 +10,8 @@ import com.shop.orderservice.model.entity.Order;
 import com.shop.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -182,5 +184,16 @@ public class OrderService {
             }
         }
 
+    }
+
+    public List<OrderBaseDto> getOrders(String role, int page, int size, String status) {
+        if (!role.equals("ROLE_ADMIN")) {
+            throw new OrderException("You are not admin.");
+        }
+        Pageable pageable = PageRequest.of(page, size);
+        if (status == null || status.isEmpty()) {
+            return orderRepository.findAll(pageable).map(OrderBaseDto::mapToDto).toList();
+        }
+        return orderRepository.findAllByStatus(OrderStatus.valueOf(status), pageable).stream().map(OrderBaseDto::mapToDto).toList();
     }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { UserDetails, UserRole, UserStatus } from '../model/user-dto';
+import { UserDetails, UserStatus } from '../model/user-dto';
 import { CategoryNew, ProductInfo, ProductsResponse } from '../model/product';
 import { OrderBaseInfo } from '../model/order';
 
@@ -48,23 +48,25 @@ export class AdminService {
       params = params.set('categories', category.join(', '));
     }
 
+    params = params.set('size', 10);
+
     return this.httpClient.get<ProductsResponse>(`${this.apiUrl}/products`, { params });
   }
 
   updateProduct(productId: string, editedProduct: ProductInfo): Observable<ProductInfo> {
-    return this.httpClient.patch<ProductInfo>(`${this.apiUrl}/products/${productId}`, editedProduct);
+    return this.httpClient.patch<ProductInfo>(`${this.apiUrl}/products/admin/${productId}`, editedProduct);
   }
 
   changeAvailability(productId: string, newAvailability: boolean) {
-    return this.httpClient.patch(`${this.apiUrl}/products/${productId}/available`, newAvailability);
+    return this.httpClient.patch(`${this.apiUrl}/products/admin/${productId}/available`, newAvailability);
   }
 
   addProduct(formData: FormData) {
-    return this.httpClient.post(`${this.apiUrl}/products`, formData);
+    return this.httpClient.post(`${this.apiUrl}/products/admin`, formData);
   }
 
   addCategory(category: { name: string }): Observable<CategoryNew> {
-    return this.httpClient.post<CategoryNew>(`${this.apiUrl}/categories`, category);
+    return this.httpClient.post<CategoryNew>(`${this.apiUrl}/products/admin/categories`, category);
   }
 
   getOrders(page: number = 0, selectedStatus: string | null): Observable<OrderBaseInfo[]>{
@@ -73,10 +75,10 @@ export class AdminService {
     if (selectedStatus) {
       params = params.set('status', selectedStatus);
     }
-    return this.httpClient.get<OrderBaseInfo[]>(`${this.apiUrl}/orders`, { params });
+    return this.httpClient.get<OrderBaseInfo[]>(`${this.apiUrl}/orders/admin`, { params });
   }
 
   cancelOrder(orderId: string) {
-    return this.httpClient.patch(`${this.apiUrl}/orders/${orderId}`, null);
+    return this.httpClient.patch(`${this.apiUrl}/orders/cancel/${orderId}`, null);
   }
 }

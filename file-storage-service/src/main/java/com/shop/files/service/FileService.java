@@ -1,9 +1,12 @@
 package com.shop.files.service;
 
+import com.shop.files.model.dto.FileUploadMessage;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -41,6 +44,27 @@ public class FileService {
             }
         }
         return null;
+    }
+
+    @KafkaListener(topics = "file-uploads", groupId = "file-storage-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void consumeFileUpload(ConsumerRecord<String, FileUploadMessage> record) {
+        FileUploadMessage fileMessage = record.value();
+
+        try {
+            Path uploadDir = Paths.get("./uploads");
+
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
+
+            Path filePath = uploadDir.resolve(fileMessage.getFileName());
+            Files.write(filePath, fileMessage.getFileData());
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 

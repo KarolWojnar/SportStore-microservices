@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.shop.paymentservice.exception.PaymentException;
 import com.shop.paymentservice.model.DeliveryTime;
+import com.shop.paymentservice.model.dto.CustomerFromOrderDto;
 import com.shop.paymentservice.model.dto.OrderBaseInfo;
 import com.shop.paymentservice.model.dto.OrderDto;
 import com.shop.paymentservice.model.dto.OrderInfoRepayment;
@@ -122,13 +123,17 @@ public class PaymentService {
                     totalPrice,
                     orderDto.getPaymentMethod()
             );
+            CustomerFromOrderDto customer = new CustomerFromOrderDto(
+                    Long.valueOf(userId),
+                    orderDto.getFirstName(),
+                    orderDto.getLastName(),
+                    orderDto.getShippingAddress()
+            );
+            kafkaEventService.createOrUpdateCustomerInfo(customer).get(5, TimeUnit.SECONDS);
             String orderId = kafkaEventService.createOrder(order).get(5, TimeUnit.SECONDS);
             log.info("order created: {}", orderId);
             String url = preparePaymentTemplate(orderDto, totalPrice.longValueExact(), orderId);
-            log.info("url created: {}", url);
-            log.info("Start payment for {}", userId);
             kafkaEventService.deleteCart(userId).get(5, TimeUnit.SECONDS);
-            log.info("Cart deleted for {}", userId);
             return url;
         } catch (Exception e) {
             throw new PaymentException("Error during payment.", e);

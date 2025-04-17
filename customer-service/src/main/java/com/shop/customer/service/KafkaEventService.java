@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,7 @@ public class KafkaEventService {
             containerFactory = "kafkaListenerContainerFactory")
     public void customerInfoRequestListener(CustomerInfoRequest customerInfoRequest) {
         log.info("Received customer info request: {}", customerInfoRequest.getUserId());
-        Customer customer = customerRepository.findById(Long.valueOf(customerInfoRequest.getUserId())).orElse(null);
+        Customer customer = customerRepository.findByUserId(Long.valueOf(customerInfoRequest.getUserId())).orElse(null);
         CustomerInfoResponse response = new CustomerInfoResponse(customerInfoRequest.getCorrelationId(), CustomerDto.toDto(customer));
         kafkaTemplate.send("customer-info-response", response);
     }
@@ -71,5 +72,21 @@ public class KafkaEventService {
         List<UserCustomerDto> customerDto = customer.stream().map(UserCustomerDto::toDto).toList();
         UserCustomerInfoResponse response = new UserCustomerInfoResponse(request.getCorrelationId(), customerDto);
         kafkaTemplate.send("user-customer-info-response", response);
+    }
+
+    @Transactional
+    @KafkaListener(topics = "customer-order-request", groupId = "customer-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void customerOrderRequestListener(CustomerCreateRequest request) {
+        log.info("Received customer order request: {}", request.getCorrelationId());
+        CustomerFromOrderDto customerDto = request.getCustomerFromOrderDto();
+        Customer customer = customerRepository.findByUserId(customerDto.getUserId())
+                .orElseGet(Customer::new);
+        customer.setUserId(customerDto.getUserId());
+        customer.setFirstName(customerDto.getFirstName());
+        customer.setLastName(customerDto.getLastName());
+        customer.setShippingAddress(customerDto.getAddress());
+        customerRepository.saveAndFlush(customer);
+        kafkaTemplate.send("customer-order-response", request.getCorrelationId());
     }
 }

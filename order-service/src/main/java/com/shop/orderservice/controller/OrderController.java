@@ -50,4 +50,12 @@ public class OrderController {
         orderService.refundOrder(id, userId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/admin")
+    public ResponseEntity<?> getOrders(@RequestHeader("X-User-Role") @NonNull String role,
+                                       @RequestParam(value = "page", defaultValue = "0") int page,
+                                       @RequestParam(value = "size", defaultValue = "10") int size,
+                                       @RequestParam(value = "status", defaultValue = "") String status){
+        return ResponseEntity.ok(orderService.getOrders(role, page, size, status));
+    }
 }

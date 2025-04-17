@@ -32,6 +32,7 @@ public class KafkaEventService {
     private final Map<String, CompletableFuture<String>> requestsForCreateOrder = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Void>> requestsForDeleteCart = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Void>> requestsForOrderSession = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<Void>> requestsForCustomer = new ConcurrentHashMap<>();
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final OutboxRepository outboxRepository;
 
@@ -237,6 +238,32 @@ public class KafkaEventService {
         log.info(String.valueOf(order.getOrderInfoRepayment().getPaymentMethod()));
         if (future != null) {
             future.complete(order.getOrderInfoRepayment());
+        }
+    }
+
+    public CompletableFuture<Void> createOrUpdateCustomerInfo(CustomerFromOrderDto customer) {
+        String correlationId = UUID.randomUUID().toString();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        requestsForCustomer.put(correlationId, future);
+        try {
+            CustomerCreateRequest request = new CustomerCreateRequest(correlationId, customer);
+            kafkaTemplate.send("customer-order-request", request);
+            ScheduledExecutorService scheduler = java.util.concurrent.Executors.newScheduledThreadPool(1);
+            scheduler.schedule(() -> {
+                future.completeExceptionally(new RuntimeException("Timeout waiting for order"));
+            }, 10, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
+    @KafkaListener(topics = "customer-order-response", groupId = "order-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void customerResponse(String correlationId) {
+        CompletableFuture<Void> future = requestsForCustomer.remove(correlationId);
+        if (future != null) {
+            future.complete(null);
         }
     }
 }

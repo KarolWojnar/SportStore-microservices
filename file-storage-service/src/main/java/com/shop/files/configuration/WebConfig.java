@@ -18,5 +18,9 @@ public class WebConfig implements WebFluxConfigurer {
                         "file:./uploads/"
                 )
                 .setCacheControl(CacheControl.maxAge(365, TimeUnit.DAYS));
+
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:./uploads/")
+                .setCacheControl(CacheControl.maxAge(365, TimeUnit.DAYS));
     }
 }

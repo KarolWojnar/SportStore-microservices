@@ -82,6 +82,13 @@ spring:
             - Path=/images/**
           filters:
             - RewritePath=/images/(?<segment>.*), /api/files/$\{segment}
+
+        - id: file-storage-service
+          uri: lb://file-storage-service
+          predicates:
+            - Path=/uploads/**
+          filters:
+            - RewritePath=/uploads/(?<segment>.*), /api/files/$\{segment}
   web:
     resources:
       add-mappings: true
