@@ -4,16 +4,13 @@ import com.shop.apigateway.model.dto.ValidationResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.*;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.server.reactive.ServerHttpResponse;
-import reactor.core.publisher.Flux;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import java.util.List;
 
 
 @Slf4j
@@ -32,79 +29,84 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     @Override
     public GatewayFilter apply(Config config) {
         return ((exchange, chain) -> {
-            if (validator.isSecured.test(exchange.getRequest())) {
-                if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)
-                        && !exchange.getRequest().getCookies().containsKey("Refresh-token")) {
-                    exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                    exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-                    return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
-                            .bufferFactory()
-                            .wrap(("Unauthorized: error with tokens").getBytes())));
-                }
+            ServerHttpRequest request = exchange.getRequest();
 
-                String authCookie = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
-                HttpCookie refreshCookie = exchange.getRequest().getCookies().get("Refresh-token").get(0);
-
-                try {
-                    String cookies = refreshCookie.getName() +
-                            "=" +
-                            refreshCookie.getValue();
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON);
-                    headers.add(HttpHeaders.COOKIE, cookies);
-                    assert authCookie != null;
-                    headers.add(HttpHeaders.AUTHORIZATION, authCookie);
-                    HttpEntity<Object> entity = new HttpEntity<>(headers);
-                    ResponseEntity<ValidationResponse> response = template.exchange(
-                            "http://localhost:8080/api/auth/validate",
-                            HttpMethod.GET,
-                            entity,
-                            ValidationResponse.class
-                    );
-
-                    if (response.getStatusCode() == HttpStatus.OK) {
-                        log.info("Authentication successful, proceeding with chain filter");
-                        ValidationResponse validData = response.getBody();
-                        if (validData != null) {
-                            ServerHttpRequest request = exchange.getRequest()
-                                    .mutate()
-                                    .header("X-User-Id", validData.getUserId().toString())
-                                    .header("X-User-Email", validData.getEmail())
-                                    .header("X-User-Role", validData.getRole())
-                                    .build();
-                            exchange = exchange.mutate().request(request).build();
-                        }
-                        List<String> cookiesList = response.getHeaders().get(HttpHeaders.SET_COOKIE);
-                        if (cookiesList != null) {
-                            List<java.net.HttpCookie> httpCookie = java.net.HttpCookie.parse(cookiesList.get(0));
-                            for (java.net.HttpCookie cookie: httpCookie){
-                                exchange.getResponse().getCookies().add(cookie.getName(),
-                                        ResponseCookie.from(cookie.getName(),cookie.getValue())
-                                                .domain(cookie.getDomain())
-                                                .path(cookie.getPath())
-                                                .maxAge(cookie.getMaxAge())
-                                                .secure(cookie.getSecure())
-                                                .httpOnly(cookie.isHttpOnly())
-                                                .build());
-                            }
-                        }
-                        return chain.filter(exchange);
-                    }
-
-                } catch (HttpClientErrorException e) {
-                    log.warn("Can't login bad token");
-                    String message  = e.getMessage().substring(7);
-                    message = message.substring(0,message.length()-1);
-                    ServerHttpResponse response = exchange.getResponse();
-                    HttpHeaders headers = response.getHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON);
-                    response.setStatusCode(HttpStatus.UNAUTHORIZED);
-                    return exchange.getResponse().writeWith(Flux.just(new DefaultDataBufferFactory().wrap(message.getBytes())));
-                }
+            if (!validator.isSecured.test(request)) {
+                log.info("Request is not secured, skipping authentication path {}", request.getURI().getPath());
+                return chain.filter(exchange);
             }
-        return chain.filter(exchange);
+            log.info("Request is secured, skipping authentication path {}", request.getURI().getPath());
 
-    });
+            if (!request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION) ||
+                    request.getHeaders().get(HttpHeaders.AUTHORIZATION).isEmpty() ||
+                    !request.getCookies().containsKey("Refresh-token") ||
+                    request.getCookies().get("Refresh-token").isEmpty()) {
+                return unauthorizedResponse(exchange, "Unauthorized: missing tokens");
+            }
+
+            String authHeader = request.getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
+            HttpCookie refreshCookie = request.getCookies().get("Refresh-token").get(0);
+
+            try {
+                String cookies = refreshCookie.getName() + "=" + refreshCookie.getValue();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.add(HttpHeaders.COOKIE, cookies);
+                headers.add(HttpHeaders.AUTHORIZATION, authHeader);
+                HttpEntity<Object> entity = new HttpEntity<>(headers);
+
+                ResponseEntity<ValidationResponse> response = template.exchange(
+                        "http://localhost:8080/api/auth/validate",
+                        HttpMethod.GET,
+                        entity,
+                        ValidationResponse.class
+                );
+                log.info("Validation response: {}", response.getBody());
+
+                if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                    ValidationResponse validData = response.getBody();
+                    if (validData != null) {
+                        if (validator.requiresAdminRole.test(request) &&
+                                !"ROLE_ADMIN".equals(validData.getRole())) {
+                            return forbiddenResponse(exchange);
+                        }
+
+                        ServerHttpRequest modifiedRequest = request
+                                .mutate()
+                                .header("X-User-Id", validData.getUserId().toString())
+                                .header("X-User-Email", validData.getEmail())
+                                .header("X-User-Role", validData.getRole())
+                                .build();
+                        exchange = exchange.mutate().request(modifiedRequest).build();
+                    }
+                    return chain.filter(exchange);
+                } else {
+                    return unauthorizedResponse(exchange, "Unauthorized: invalid tokens");
+                }
+            } catch (HttpClientErrorException e) {
+                log.warn("Authentication failed: {}", e.getMessage());
+                return unauthorizedResponse(exchange, "Unauthorized: " + e.getStatusText());
+            } catch (Exception e) {
+                log.error("Authentication error: {}", e.getMessage(), e);
+                return unauthorizedResponse(exchange, "Authorization service unavailable");
+            }
+        });
+    }
+
+    private Mono<Void> unauthorizedResponse(ServerWebExchange exchange, String message) {
+        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
+                .bufferFactory()
+                .wrap(message.getBytes())));
+    }
+
+    private Mono<Void> forbiddenResponse(ServerWebExchange exchange) {
+        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
+                .bufferFactory()
+                .wrap("Forbidden: Admin role required".getBytes())));
     }
 
     public static class Config {}

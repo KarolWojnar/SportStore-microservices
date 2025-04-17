@@ -1,17 +1,20 @@
 package com.shop.authservice.controller;
 
+import com.shop.authservice.model.Roles;
 import com.shop.authservice.model.SuccessResponse;
 import com.shop.authservice.model.dto.*;
 import com.shop.authservice.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -79,5 +82,29 @@ public class AuthController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getRole() {
         return ResponseEntity.ok(new LoginStatus(userService.getRole()));
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<?> getUser(@RequestHeader("X-User-Role") @NonNull String userRole,
+                                     @RequestParam(value = "page", defaultValue = "0") int page,
+                                     @RequestParam(value = "search", defaultValue = "", required = false) String search,
+                                     @RequestParam(value = "role", defaultValue = "", required = false) String role,
+                                     @RequestParam(value = "enabled", defaultValue = "", required = false) Boolean enabled){
+        List<UserAdminInfo> users = userService.getAllUsers(userRole, page, search, role, enabled);
+        return ResponseEntity.ok(users);
+    }
+
+    @PatchMapping("/admin/{id}")
+    public ResponseEntity<?> changeUserStatus(@RequestHeader("X-User-Role") @NonNull String userRole,
+                                              @PathVariable String id, @RequestBody UserStatusRequest status){
+        userService.changeUserStatus(userRole, id, status);
+        return ResponseEntity.ok(new SuccessResponse("User status changed"));
+    }
+
+    @PatchMapping("/admin/{id}/role")
+    public ResponseEntity<?> setAdmin(@RequestHeader("X-User-Role") @NonNull String userRole,
+                                            @PathVariable String id) {
+        userService.setAdmin(userRole, id);
+        return ResponseEntity.ok(new SuccessResponse("User role changed"));
     }
 }

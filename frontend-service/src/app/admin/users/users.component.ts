@@ -79,8 +79,8 @@ export class UsersComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.adminService.getAllUsers(this.page, this.search, this.role, this.enabled).subscribe({
       next: (response) => {
-        this.users = [...this.users, ...response.users];
-        this.hasMoreUsers = response.users.length === 10;
+        this.users = [...this.users, ...response];
+        this.hasMoreUsers = response.length === 10;
         this.errorMessage = '';
       },
       error: (error) => {
@@ -189,7 +189,7 @@ export class UsersComponent implements OnInit, AfterViewInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.adminService.setRole(id, UserRole.ROLE_ADMIN).subscribe({
+        this.adminService.setAdmin(id).subscribe({
           next: () => {
             this.users = this.users.map(user => {
               if (user.id === id) {

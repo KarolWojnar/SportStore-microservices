@@ -4,10 +4,7 @@ import com.shop.authservice.exception.UserException;
 import com.shop.authservice.model.ActivationType;
 import com.shop.authservice.model.ProviderType;
 import com.shop.authservice.model.Roles;
-import com.shop.authservice.model.dto.AuthUser;
-import com.shop.authservice.model.dto.ResetPassword;
-import com.shop.authservice.model.dto.UserDto;
-import com.shop.authservice.model.dto.ValidUser;
+import com.shop.authservice.model.dto.*;
 import com.shop.authservice.model.entity.Activation;
 import com.shop.authservice.model.entity.User;
 import com.shop.authservice.repository.ActivationRepository;
@@ -18,6 +15,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -275,5 +276,74 @@ public class UserService {
         activationRepository.deleteAll(codes);
         userRepository.deleteAll(users);
         log.info("Deleted {} accounts.", users.size());
+    }
+
+    public List<UserAdminInfo> getAllUsers(String userRole, int page, String search, String role, Boolean enabled) {
+        if (!userRole.equals(Roles.ROLE_ADMIN.name())) {
+            throw new UserException("You are not authorized to view this page.");
+        }
+
+        try {
+            Pageable pageable = PageRequest.of(page, 10);
+            Page<User> users;
+
+            boolean hasSearch = search != null && !search.isEmpty();
+            boolean hasRole = role != null && !role.isEmpty();
+            boolean hasEnabled = enabled != null;
+
+            if (!hasSearch && !hasRole && !hasEnabled) {
+                users = userRepository.findAll(pageable);
+            } else {
+                Roles roleEnum = hasRole ? Roles.valueOf(role) : null;
+                users = userRepository.findAllBySearch(
+                        hasSearch ? "%" + search.toLowerCase() + "%" : null,
+                        roleEnum,
+                        hasEnabled ? enabled : null,
+                        pageable
+                );
+            }
+            List<UserCustomerDto> customerDto = kafkaEventService.getCustomerByUserIds(users.getContent().stream().map(User::getId).toList())
+                    .get(5, TimeUnit.SECONDS);
+            List<UserAdminInfo> userAdminList = new ArrayList<>();
+            for (User user : users) {
+                UserCustomerDto customer = customerDto.stream()
+                        .filter(c -> c.getId().equals(user.getId()))
+                        .findFirst()
+                        .orElse(null);
+                userAdminList.add(UserAdminInfo.toDto(user, customer));
+            }
+            return userAdminList;
+        } catch (Exception e) {
+            throw new UserException("Error while getting users.", e);
+        }
+    }
+
+    public void changeUserStatus(String userRole, String id, UserStatusRequest status) {
+        if (!userRole.equals(Roles.ROLE_ADMIN.name())) {
+            throw new UserException("You are not authorized to view this page.");
+        }
+        try {
+            User user = userRepository.findById(Long.parseLong(id))
+                    .orElseThrow(() -> new UserException("User not found."));
+            user.setEnabled(status.isUserStatus());
+            userRepository.save(user);
+        } catch (Exception e) {
+            throw new UserException("Error while changing user status.", e);
+        }
+    }
+
+    public void setAdmin(String userRole, String id) {
+        if (!userRole.equals(Roles.ROLE_ADMIN.name())) {
+            throw new UserException("You are not authorized to view this page.");
+        }
+        try {
+            User user = userRepository.findById(Long.parseLong(id))
+                    .orElseThrow(() -> new UserException("User not found."));
+            user.setRole(Roles.ROLE_ADMIN);
+            userRepository.save(user);
+
+        } catch (Exception e) {
+            throw new UserException("Error while changing user role.", e);
+        }
     }
 }

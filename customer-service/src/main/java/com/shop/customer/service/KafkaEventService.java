@@ -9,6 +9,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -60,5 +61,15 @@ public class KafkaEventService {
         Customer customer = customerRepository.findById(Long.valueOf(customerInfoRequest.getUserId())).orElse(null);
         CustomerInfoResponse response = new CustomerInfoResponse(customerInfoRequest.getCorrelationId(), CustomerDto.toDto(customer));
         kafkaTemplate.send("customer-info-response", response);
+    }
+
+    @KafkaListener(topics = "user-customer-info-request", groupId = "customer-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void customerInfoResponseListener(UserCustomerInfoRequest request) {
+        log.info("Received customer info response: {}", request.getCorrelationId());
+        List<Customer> customer = customerRepository.findAllById(request.getUserIds());
+        List<UserCustomerDto> customerDto = customer.stream().map(UserCustomerDto::toDto).toList();
+        UserCustomerInfoResponse response = new UserCustomerInfoResponse(request.getCorrelationId(), customerDto);
+        kafkaTemplate.send("user-customer-info-response", response);
     }
 }

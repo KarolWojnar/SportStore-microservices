@@ -9,7 +9,7 @@ import { OrderBaseInfo } from '../model/order';
   providedIn: 'root'
 })
 export class AdminService {
-  private apiUrl = 'http://localhost:8080/api/admin';
+  private apiUrl = 'http://localhost:8080/api';
 
   constructor(private httpClient: HttpClient) { }
 
@@ -18,7 +18,7 @@ export class AdminService {
     search: string = '',
     role: "ROLE_ADMIN" | "ROLE_CUSTOMER" | null = null,
     enabled: boolean | null = null
-  ): Observable<{users: UserDetails[]}> {
+  ): Observable<UserDetails[]> {
     let params = new HttpParams()
       .set('page', page.toString());
 
@@ -26,15 +26,15 @@ export class AdminService {
     if (role) params = params.set('role', role);
     if (enabled !== null) params = params.set('enabled', enabled.toString());
 
-    return this.httpClient.get<{users: UserDetails[]}>(`${this.apiUrl}/users`, { params });
+    return this.httpClient.get<UserDetails[]>(`${this.apiUrl}/auth/admin`, { params });
   }
 
   setActivationUser(userId: string, status: UserStatus) {
-    return this.httpClient.patch(`${this.apiUrl}/users/${userId}`, status);
+    return this.httpClient.patch(`${this.apiUrl}/auth/admin/${userId}`, status);
   }
 
-  setRole(id: string, role: UserRole) {
-    return this.httpClient.patch(`${this.apiUrl}/users/${id}/role`, role);
+  setAdmin(id: string) {
+    return this.httpClient.patch(`${this.apiUrl}/auth/admin/${id}/role`, {});
   }
 
   getAllProducts(page: number, search?: string, category: string[] = []): Observable<ProductsResponse> {

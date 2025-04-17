@@ -30,6 +30,7 @@ public class KafkaEventService {
     private final UserRepository userRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Map<String, CompletableFuture<Boolean>> pendingCartChecks = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<List<UserCustomerDto>>> customersInfoRequests = new ConcurrentHashMap<>();
     private final OutboxEventRepository outboxEventRepository;
 
     public void sendRegistrationEvent(String email, Activation activation) {
@@ -166,5 +167,28 @@ public class KafkaEventService {
         }
         userEmailResponse.setEmail(user.getEmail());
         kafkaTemplate.send("user-email-response", userEmailResponse);
+    }
+
+    public CompletableFuture<List<UserCustomerDto>> getCustomerByUserIds(List<Long> list) {
+        String correlationId = UUID.randomUUID().toString();
+        CompletableFuture<List<UserCustomerDto>> future = new CompletableFuture<>();
+        customersInfoRequests.put(correlationId, future);
+        try {
+            UserCustomerInfoRequest customerInfoRequest = new UserCustomerInfoRequest(correlationId, list);
+            kafkaTemplate.send("user-customer-info-request", customerInfoRequest);
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+            customersInfoRequests.remove(correlationId);
+        }
+        return future;
+    }
+
+    @KafkaListener(topics = "user-customer-info-response", groupId = "auth-service",
+            containerFactory = "kafkaListenerContainerFactory")
+    public void getCustomerInfoResponse(UserCustomerInfoResponse response) {
+        CompletableFuture<List<UserCustomerDto>> future = customersInfoRequests.remove(response.getCorrelationId());
+        if (future != null) {
+            future.complete(response.getCustomers());
+        }
     }
 }
