@@ -47,7 +47,7 @@ public class RouteValidator {
             request -> adminEndpoints.stream()
                     .anyMatch(endpoint -> pathMatches(endpoint, request.getURI().getPath()));
 
-    private boolean pathMatches(String pattern, String path) {
+    boolean pathMatches(String pattern, String path) {
         if (pattern.equals(path)) return true;
 
         String regex = pattern

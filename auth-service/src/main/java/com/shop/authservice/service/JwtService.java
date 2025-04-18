@@ -80,7 +80,7 @@ public class JwtService {
             log.info("Added token to blacklist: {}", key);
         } catch (Exception e) {
             log.error("Failed to add token to Redis blacklist", e);
-            throw new UserException("Failed to invalidate token.");
+            throw new UserException("Failed to invalidate token.", e);
         }
     }
 
