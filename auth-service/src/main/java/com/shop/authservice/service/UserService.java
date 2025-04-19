@@ -82,16 +82,12 @@ public class UserService {
     public Map<String, Object> loginSuccessGoogle(Map<String, String> tokenGoogle, HttpServletResponse response) {
         String idToken = tokenGoogle.get("idToken");
         String email = jwtUtil.getEmailFromGoogleToken(idToken);
-        User user = userRepository.findByEmail(email).orElse(getOrCreateUser(email));
+        User user = userRepository.findByEmail(email).orElse(createGoogleUser(email));
         String refreshToken = jwtUtil.generateToken(user, refreshExp);
         String token = jwtUtil.generateToken(user, exp);
         return getCredentials(token, refreshToken, user.getId(), response);
     }
 
-    public User getOrCreateUser(String email) {
-        Optional<User> user = userRepository.findByEmail(email);
-        return user.orElseGet(() -> createGoogleUser(email));
-    }
 
     private User createGoogleUser(String email) {
         User user = new User();
