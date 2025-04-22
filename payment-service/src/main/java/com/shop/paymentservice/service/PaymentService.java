@@ -37,11 +37,11 @@ public class PaymentService {
 
     private final ObjectMapper objectMapper;
     @Value("${spring.stripe.secret}")
-    private String stripeSecretKey;
+    protected String stripeSecretKey;
     @Value("${spring.webhook.secret}")
-    private String stripeWebhookSecret;
+    protected String stripeWebhookSecret;
     @Value("${front.url}")
-    private String frontUrl;
+    protected String frontUrl;
 
     public void webhook(String payload, String signature) {
         try {

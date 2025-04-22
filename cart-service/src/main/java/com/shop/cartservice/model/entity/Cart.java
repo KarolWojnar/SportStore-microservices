@@ -14,6 +14,11 @@ public class Cart {
     private boolean isOrderProcessing = false;
     private Date lastModified = Date.from(java.time.Instant.now());
 
+    public Cart(String userId, Map<String, Integer> products) {
+        this.userId = userId;
+        this.products = products;
+    }
+
     public void setOrderProcessing(boolean orderProcessing) {
         this.isOrderProcessing = orderProcessing;
         this.lastModified = Date.from(java.time.Instant.now());

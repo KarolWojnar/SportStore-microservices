@@ -1,10 +1,13 @@
 package com.shop.apigateway.filter;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(MockitoExtension.class)
 class RouteValidatorTest {
 
     private final RouteValidator routeValidator = new RouteValidator();

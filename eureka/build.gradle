@@ -25,6 +25,7 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server'
     implementation 'org.glassfish.jersey.core:jersey-client:3.1.9'
     implementation 'org.glassfish.jersey.inject:jersey-hk2:3.1.7'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.glassfish.jersey.media:jersey-media-json-jackson:3.1.4'
     implementation 'jakarta.ws.rs:jakarta.ws.rs-api:4.0.0'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

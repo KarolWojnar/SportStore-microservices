@@ -26,15 +26,15 @@ import java.util.concurrent.ScheduledExecutorService;
 @RequiredArgsConstructor
 public class KafkaEventService {
 
-    private final Map<String, CompletableFuture<BigDecimal>> requestsForTotalPrice = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<OrderInfoRepayment>> requestsForOrderInfo = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<Map<String, Integer>>> requestsForCart = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<String>> requestsForCreateOrder = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<Void>> requestsForDeleteCart = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<Void>> requestsForOrderSession = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<Void>> requestsForCustomer = new ConcurrentHashMap<>();
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final OutboxRepository outboxRepository;
+    protected final Map<String, CompletableFuture<BigDecimal>> requestsForTotalPrice = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<OrderInfoRepayment>> requestsForOrderInfo = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<Map<String, Integer>>> requestsForCart = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<String>> requestsForCreateOrder = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<Void>> requestsForDeleteCart = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<Void>> requestsForOrderSession = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<Void>> requestsForCustomer = new ConcurrentHashMap<>();
+    protected final KafkaTemplate<String, Object> kafkaTemplate;
+    protected final OutboxRepository outboxRepository;
 
     public void sendOrderAsProcessing(String sessionId) {
         log.info("Order with id {} is processing", sessionId);

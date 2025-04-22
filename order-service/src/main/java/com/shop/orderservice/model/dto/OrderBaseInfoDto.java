@@ -2,14 +2,18 @@ package com.shop.orderservice.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.shop.orderservice.model.entity.Order;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Date;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrderBaseInfoDto {
     private Long id;

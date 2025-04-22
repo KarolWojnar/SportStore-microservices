@@ -5,6 +5,7 @@ import com.shop.notificationservice.model.dto.ProductInfoEmail;
 import com.shop.notificationservice.model.dto.UserDataOperationEvent;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -22,9 +23,11 @@ import static com.shop.notificationservice.service.ConstantStrings.ORDER_SUMMARY
 @RequiredArgsConstructor
 public class EmailService {
 
+    @Setter
     @Value("${spring.mail.username}")
     private String sender;
 
+    @Setter
     @Value("${frontend.url}")
     private String url;
 

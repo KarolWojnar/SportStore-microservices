@@ -3,11 +3,15 @@ package com.shop.customer.model.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.shop.customer.model.ShippingAddress;
 import com.shop.customer.model.entity.Customer;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDetailsDto extends UserInfoDto {
     private String firstName;

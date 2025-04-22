@@ -1,5 +1,4 @@
 services:
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.4
     container_name: zookeeper
@@ -10,32 +9,11 @@ services:
     ports:
       - "2181:2181"
     healthcheck:
-      test: [ "CMD-SHELL", "echo stat | nc 127.0.0.1 2181 | grep Mode" ]
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 | grep 'Mode: ' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - store-network
-
-  kafka:
-    image: confluentinc/cp-kafka:7.4.4
-    depends_on:
-      - zookeeper
-    container_name: kafka
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-    healthcheck:
-      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list" ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
+      start_period: 30s
     networks:
       - store-network
 
@@ -46,160 +24,6 @@ services:
     container_name: frontend-service
     ports:
       - '4200:4200'
-    volumes:
-      - ./frontend-service:/app
-    networks:
-      - store-network
-
-  stripe-cli:
-    image: stripe/stripe-cli:v1.26.1
-    container_name: stripe-cli
-    command: listen --forward-to http://api-gateway:8080/api/payment/webhook
-    volumes:
-      - stripe-cli-config:/root/.config/stripe
-    networks:
-      - store-network
-
-  eureka-server:
-    container_name: eureka-server
-    build:
-      context: ./eureka
-      dockerfile: Dockerfile
-    ports:
-      - "8761:8761"
-    networks:
-      - store-network
-
-  file-storage-service:
-    container_name: file-storage-service
-    build:
-      context: ./file-storage-service
-      dockerfile: Dockerfile
-    ports:
-      - "8084:8080"
-    volumes:
-      - ./file-storage-service/uploads:/app/uploads
-      - ./file-storage-service/src/main/resources/static:/app/src/main/resources/static
-    depends_on:
-      eureka-server:
-        condition: service_started
-    networks:
-      - store-network
-
-  customer-service:
-    container_name: customer-service
-    build:
-      context: ./customer-service
-      dockerfile: Dockerfile
-    ports:
-      - "8081:8080"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      customer-db:
-        condition: service_healthy
-    networks:
-      - store-network
-
-  notification-service:
-    container_name: notification-service
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    ports:
-      - "8085:8080"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      kafka:
-        condition: service_healthy
-    networks:
-      - store-network
-
-  product-service:
-    container_name: product-service
-    build:
-      context: ./product-service
-      dockerfile: Dockerfile
-    ports:
-      - "8082:8080"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      product-db:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    networks:
-      - store-network
-
-  auth-service:
-    container_name: auth-service
-    build:
-      context: ./auth-service
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    ports:
-      - "8083:8080"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      user-db:
-        condition: service_healthy
-      redis-auth:
-        condition: service_healthy
-    networks:
-      - store-network
-
-  cart-service:
-    container_name: cart-service
-    build:
-      context: ./cart-service
-      dockerfile: Dockerfile
-    ports:
-      - "8086:8080"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      customer-db:
-        condition: service_healthy
-    networks:
-      - store-network
-
-  payment-service:
-    container_name: payment-service
-    build:
-      context: ./payment-service
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    ports:
-      - "8087:8080"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      customer-service:
-        condition: service_started
-    networks:
-      - store-network
-
-  order-service:
-    container_name: order-service
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    ports:
-      - "8088:8080"
-    depends_on:
-      eureka-server:
-        condition: service_started
-      order-db:
-        condition: service_healthy
     networks:
       - store-network
 
@@ -325,6 +149,239 @@ services:
     networks:
       - store-network
 
+  kafka:
+    image: confluentinc/cp-kafka:7.4.4
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    networks:
+      - store-network
+
+  eureka-server:
+    container_name: eureka-server
+    build:
+      context: ./eureka
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: "curl --fail --silent localhost:8761/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - store-network
+
+  file-storage-service:
+    container_name: file-storage-service
+    build:
+      context: ./file-storage-service
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8080"
+    volumes:
+      - ./file-storage-service/uploads:/app/uploads
+      - ./file-storage-service/src/main/resources/static:/app/src/main/resources/static
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - store-network
+
+  customer-service:
+    container_name: customer-service
+    build:
+      context: ./customer-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      customer-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - store-network
+
+  notification-service:
+    container_name: notification-service
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8085:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - store-network
+
+  product-service:
+    container_name: product-service
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      product-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - store-network
+
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8083:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      user-db:
+        condition: service_healthy
+      redis-auth:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - store-network
+
+  cart-service:
+    container_name: cart-service
+    build:
+      context: ./cart-service
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      redis-cart:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - store-network
+
+  payment-service:
+    container_name: payment-service
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8087:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      payment-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - store-network
+
+  order-service:
+    container_name: order-service
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8088:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      order-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - store-network
+
+  stripe-cli:
+    image: stripe/stripe-cli:v1.26.1
+    container_name: stripe-cli
+    command: listen --forward-to http://api-gateway:8080/api/payment/webhook
+    volumes:
+      - stripe-cli-config:/root/.config/stripe
+    depends_on:
+      payment-service:
+        condition: service_healthy
+    networks:
+      - store-network
+
   api-gateway:
     container_name: api-gateway
     build:
@@ -335,14 +392,22 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      eureka-server:
-        condition: service_started
       customer-service:
-        condition: service_started
+        condition: service_healthy
       product-service:
-        condition: service_started
+        condition: service_healthy
       auth-service:
-        condition: service_started
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      file-storage-service:
+        condition: service_healthy
     networks:
       - store-network
 

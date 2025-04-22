@@ -1,19 +1,10 @@
 package com.shop.notificationservice.service;
 
-import java.math.BigDecimal;
-import java.time.Duration;
-
 public final class ConstantStrings {
     public static final String ACTIVATION_EMAIL_SUBJECT = "Activate your account";
     public static final String RESET_PASSWORD_SUBJECT = "Reset your password";
     public static final String ORDER_SUMMARY_SUBJECT = "Your order delivered!";
     public static final String ORDER_EMAIL_SUBJECT = "Your order - Sport Store";
-
-    public static final Duration ORDER_EXPIRATION = Duration.ofMinutes(30);
-    public static final Duration ORDER_CHANGE = Duration.ofDays(2);
-    public static final Duration ORDER_DELETE = Duration.ofDays(1);
-    public static final BigDecimal STANDARD_SHIPPING = BigDecimal.ZERO;
-    public static final BigDecimal EXPRESS_SHIPPING = new BigDecimal("10.00");
 
     public static final String ACTIVATION_EMAIL_BODY = """
         <html>

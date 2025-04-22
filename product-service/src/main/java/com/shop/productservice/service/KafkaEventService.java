@@ -27,7 +27,7 @@ public class KafkaEventService {
 
     private final ProductRepository productRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final Map<String, CompletableFuture<OrderProductRatedRequest>> orderProductAsRatedMap = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<OrderProductRatedRequest>> orderProductAsRatedMap = new ConcurrentHashMap<>();
 
     @KafkaListener(topics = "product-cart-quantity-check-request", groupId = "product-group",
             containerFactory = "kafkaListenerContainerFactory")

@@ -28,14 +28,14 @@ public class KafkaEventService {
 
     private final OrderRepository orderRepository;
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final Map<String, CompletableFuture<CustomerDto>> requestsForCustomer = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<Map<String, Integer>>> requestsForCart = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<BigDecimal>> requestsForTotalPrice = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<Map<String, BigDecimal>>> requestsForTotalPriceItem = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<Void>> requestsForUnlockProducts = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<List<ProductOrderDto>>> requestsForProducts = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<String>> requestsForEmails = new ConcurrentHashMap<>();
+    protected final KafkaTemplate<String, Object> kafkaTemplate;
+    protected final Map<String, CompletableFuture<CustomerDto>> requestsForCustomer = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<Map<String, Integer>>> requestsForCart = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<BigDecimal>> requestsForTotalPrice = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<Map<String, BigDecimal>>> requestsForTotalPriceItem = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<Void>> requestsForUnlockProducts = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<List<ProductOrderDto>>> requestsForProducts = new ConcurrentHashMap<>();
+    protected final Map<String, CompletableFuture<String>> requestsForEmails = new ConcurrentHashMap<>();
 
     public CompletableFuture<CustomerDto> optCustomer(String userId) {
         String correlationId = UUID.randomUUID().toString();
@@ -198,7 +198,7 @@ public class KafkaEventService {
         }
     }
 
-    private CompletableFuture<Map<String, BigDecimal>> getPriceOfProducts(Set<String> productIds) {
+    CompletableFuture<Map<String, BigDecimal>> getPriceOfProducts(Set<String> productIds) {
         String correlationId = UUID.randomUUID().toString();
         CompletableFuture<Map<String, BigDecimal>> future = new CompletableFuture<>();
         requestsForTotalPriceItem.put(correlationId, future);
@@ -318,7 +318,7 @@ public class KafkaEventService {
 
     }
 
-    private CompletableFuture<String> getUserEmail(String id) {
+    CompletableFuture<String> getUserEmail(String id) {
         String correlationId = UUID.randomUUID().toString();
         CompletableFuture<String> future = new CompletableFuture<>();
         requestsForEmails.put(correlationId, future);

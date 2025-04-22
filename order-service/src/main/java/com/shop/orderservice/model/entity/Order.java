@@ -27,6 +27,7 @@ public class Order {
     private String userId;
     @NotNull(message = "Products are required.")
     @ElementCollection
+    @Builder.Default
     @CollectionTable(name = "order_products", joinColumns = @JoinColumn(name = "order_id"))
     private List<ProductInOrder> products = new ArrayList<>();
     @Builder.Default
@@ -34,12 +35,15 @@ public class Order {
     private OrderStatus status = OrderStatus.CREATED;
     @Embedded
     private ShippingAddress orderAddress;
+    @Builder.Default
     private Date orderDate = Date.from(java.time.Instant.now());
+    @Builder.Default
     private Date lastModified = Date.from(java.time.Instant.now());
     private Date deliveryDate;
     private String paymentMethod;
     private BigDecimal totalPrice;
     private String sessionId;
+    @Builder.Default
     private boolean emailSent = false;
 
     public Order(List<ProductInOrder> products, String userId, ShippingAddress address, BigDecimal price, String paymentMethod) {

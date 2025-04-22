@@ -17,3 +17,12 @@ spring:
 
 frontend:
   url: http://localhost:4200/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
