@@ -85,11 +85,15 @@ public class KafkaEventService {
                     new CartValidationResponse(request.getCorrelationId(), null, e.getMessage()));
         }
     }
-
     @Transactional
     @KafkaListener(topics = "total-price-request", groupId = "product-group",
             containerFactory = "kafkaListenerContainerFactory")
     public void getTotalPriceAndBlockProductsRequest(TotalPriceOfProductsRequest request) {
+        getTotalPriceAndBlock(request);
+    }
+
+    @Transactional
+    public void getTotalPriceAndBlock(TotalPriceOfProductsRequest request) {
         try {
             List<Product> products = productRepository.findAllById(request.getProducts().keySet());
 
@@ -124,9 +128,6 @@ public class KafkaEventService {
             BigDecimal totalPrice = BigDecimal.ZERO;
             for (Product product : products) {
                 int requestedQuantity = request.getProducts().get(product.getId());
-                if (product.getAmountLeft() < requestedQuantity) {
-                    throw new ProductException("Not enough products in stock.");
-                }
                 totalPrice = totalPrice.add(product.getPrice().multiply(BigDecimal.valueOf(requestedQuantity)));
             }
 

@@ -22,7 +22,7 @@ spring:
     bootstrap-servers: kafka:9092
 
 server:
-  port: 0
+  port: 8080
 
 front:
   url: http://localhost:4200/

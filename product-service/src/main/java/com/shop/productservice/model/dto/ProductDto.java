@@ -69,8 +69,25 @@ public class ProductDto {
         ProductDto productDto = new ProductDto();
         productDto.setName(product.getName());
         productDto.setPrice(product.getPrice());
+        productDto.setAvailable(product.isAvailable());
         productDto.setQuantity(product.getAmountLeft());
         productDto.setId(product.getId());
         return productDto;
+    }
+
+    @Override
+    public String toString() {
+        return "product: {" +
+                "name='" + name + '\'' +
+                ", id='" + id + '\'' +
+                ", description='" + description + '\'' +
+                ", price=" + price +
+                ", quantity=" + quantity +
+                ", rating=" + rating +
+                ", image='" + image + '\'' +
+                ", available=" + available +
+                ", soldItems=" + soldItems +
+                ", categories=" + categories +
+                '}';
     }
 }

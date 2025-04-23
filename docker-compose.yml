@@ -206,10 +206,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     networks:
       - store-network
 
@@ -230,7 +230,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 40s
+      start_period: 30s
     networks:
       - store-network
 
@@ -250,10 +250,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     networks:
       - store-network
 
@@ -271,10 +271,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     networks:
       - store-network
 
@@ -296,10 +296,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     networks:
       - store-network
 
@@ -317,10 +317,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     networks:
       - store-network
 
@@ -340,10 +340,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     networks:
       - store-network
 
@@ -363,10 +363,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     networks:
       - store-network
 
@@ -376,9 +376,6 @@ services:
     command: listen --forward-to http://api-gateway:8080/api/payment/webhook
     volumes:
       - stripe-cli-config:/root/.config/stripe
-    depends_on:
-      payment-service:
-        condition: service_healthy
     networks:
       - store-network
 
@@ -403,8 +400,6 @@ services:
       order-service:
         condition: service_healthy
       cart-service:
-        condition: service_healthy
-      notification-service:
         condition: service_healthy
       file-storage-service:
         condition: service_healthy
