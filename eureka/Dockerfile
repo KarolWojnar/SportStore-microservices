@@ -1,7 +1,7 @@
 FROM openjdk:17-jdk-slim as builder
 WORKDIR /app
 COPY . .
-RUN ./gradlew build -x test
+RUN ./gradlew build
 
 FROM openjdk:17-jdk-slim
 WORKDIR /app

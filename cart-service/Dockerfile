@@ -6,7 +6,7 @@ COPY build.gradle .
 COPY settings.gradle .
 COPY src src
 RUN chmod +x gradlew
-RUN ./gradlew build -x test
+RUN ./gradlew build
 
 FROM openjdk:17-jdk-slim
 WORKDIR /app
