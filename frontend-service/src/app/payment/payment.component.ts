@@ -78,25 +78,13 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
   openConfirmationModal(content: TemplateRef<any>) {
     this.modalService.open(content, { ariaLabelledBy: 'modal-basic-title' }).result.then(
-      (result) => {
-        console.log('Modal closed with result:', result);
+      () => {
+        console.log('Modal closed with success');
       },
-      (reason) => {
-        console.log('Modal dismissed with reason:', reason);
+      () => {
+        console.log('Modal dismissed');
       }
     );
-  }
-
-  checkPrice() {
-    this.storeService.getTotalPrice().subscribe({
-      next: (totalPrice) => {
-        this.priceWithDelivery = totalPrice.totalPrice;
-        this.price = totalPrice.totalPrice;
-      },
-      error: (err) => {
-        console.error('Error fetching total price:', err);
-      }
-    });
   }
 
   loadPaymentData() {
@@ -108,12 +96,15 @@ export class PaymentComponent implements OnInit, OnDestroy {
       this.isLoading = true;
       this.storeService.checkout().subscribe({
         next: (customer) => {
-          this.customer = customer.order;
-          localStorage.setItem('customer', JSON.stringify(customer.order));
+          this.price = customer.totalPrice || 0;
+          this.customer = customer;
+          localStorage.setItem('customer', JSON.stringify(customer));
           this.setValues();
           this.isLoading = false;
         },
         error: (err) => {
+          this.isLoading = false;
+          this.errorMessage = 'An error occurred while loading payment data. Try again later.';
           console.error('Error fetching customer data:', err);
         }
       });
@@ -142,7 +133,6 @@ export class PaymentComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.isDarkMode = localStorage.getItem('isDarkMode') === 'true';
     this.loadPaymentData();
-    this.checkPrice();
     this.addDeliveryTypeListener();
   }
 
@@ -183,14 +173,14 @@ export class PaymentComponent implements OnInit, OnDestroy {
       this.storeService.goToPayment(this.customer).subscribe({
         next: (response) => {
           this.isLoading = false;
-          if (response.url) {
+          if (response) {
             localStorage.removeItem('customer');
             localStorage.removeItem('cartHasItems');
             window.location.href = response.url;
           }
         },
-        error: (err) => {
-          console.error('Error updating customer:', err);
+        error: () => {
+          console.error('Error updating customer');
           this.isLoading = false;
           this.errorMessage = 'An error occurred while processing payment. Try again later.';
         }

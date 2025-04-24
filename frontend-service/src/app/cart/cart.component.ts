@@ -22,6 +22,7 @@ export class CartComponent implements OnInit {
   products: ProductCart[] = [];
   totalPrice = 0;
   errorMessage: string | null = null;
+  loading = false;
 
   constructor(private storeService: StoreService,
               private authState: AuthStateService,
@@ -33,9 +34,6 @@ export class CartComponent implements OnInit {
       next: (data) => {
         this.products = data.products;
         this.calculateTotalPrice();
-      },
-      error: (err) => {
-        console.error('Error fetching cart:', err);
       }
     });
   }
@@ -62,9 +60,6 @@ export class CartComponent implements OnInit {
     this.storeService.removeOneFromCart(productId).subscribe({
       next: () => {
         this.loadCart();
-      },
-      error: (error) => {
-        console.error('Error decreasing quantity:', error);
       }
     });
   }
@@ -74,8 +69,7 @@ export class CartComponent implements OnInit {
       next: () => {
         this.loadCart();
       },
-      error: (error) => {
-        console.error('Error removing item:', error);
+      error: () => {
       }
     });
   }
@@ -84,25 +78,25 @@ export class CartComponent implements OnInit {
     this.storeService.clearCart().subscribe({
       next: () => {
         this.loadCart();
-      },
-      error: (error) => {
-        console.error('Error clearing cart:', error);
       }
     });
   }
 
   loadCart(): void {
+    this.loading = true;
     this.storeService.getCart().subscribe({
       next: (response) => {
         this.products = response.products;
+        this.loading = false;
         if (this.products.length === 0) {
           this.authState.setCartHasItems(false);
           localStorage.setItem('cartHasItems', 'false');
         }
         this.calculateTotalPrice();
       },
-      error: (error) => {
-        console.error('Error loading cart:', error);
+      error: () => {
+        console.error('Error loading cart');
+        this.loading = false;
       }
     });
   }

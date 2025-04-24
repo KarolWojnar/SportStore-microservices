@@ -3,14 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthStateService } from './auth-state.service';
 import { CustomerDto } from '../model/user-dto';
-import { Product, ProductCart } from '../model/product';
-import { Order, OrderBaseInfo, OrderRatingProduct } from '../model/order';
+import { CategoryNew, Product, ProductCart, ProductsResponse } from '../model/product';
+import { Order, OrderBaseInfo, OrderRatingProduct, PaymentLink } from '../model/order';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StoreService {
-  private apiUrl = 'http://localhost:8080/api/store';
+  private apiUrl = 'http://localhost:8080/api/products';
+  private apiUrlCart = 'http://localhost:8080/api/cart';
   private apiUrlPayment = 'http://localhost:8080/api/payment';
   private apiUrlOrder = 'http://localhost:8080/api/orders';
 
@@ -21,16 +22,16 @@ export class StoreService {
               sort: string = 'id', direction: string = 'asc',
               search: string = '', minPrice?: number,
               maxPrice?: number, categories: string[] = [])
-    : Observable<{ products: Product[]; totalElements: number }> {
+    : Observable<ProductsResponse> {
 
     const params: any = { page, size, sort, direction, search, categories };
     if (minPrice !== undefined) params.minPrice = minPrice;
     if (maxPrice !== undefined) params.maxPrice = maxPrice;
-    return this.httpClient.get<{ products: Product[]; totalElements: number }>(`${this.apiUrl}`, {params});
+    return this.httpClient.get<ProductsResponse>(`${this.apiUrl}`, {params});
   }
 
   getCategories() {
-    return this.httpClient.get<{categories: string[]}>(`${this.apiUrl}/categories`);
+    return this.httpClient.get<CategoryNew[]>(`${this.apiUrl}/categories`);
   }
 
   getFeaturedProducts() {
@@ -42,35 +43,31 @@ export class StoreService {
   }
 
   getCart() {
-    return this.httpClient.get<{products: ProductCart[]}>(`${this.apiUrl}/cart`);
+    return this.httpClient.get<{products: ProductCart[]}>(`${this.apiUrlCart}`);
   }
 
   addToCart(id: string) {
-    return this.httpClient.post(`${this.apiUrl}/cart/add`, id);
+    return this.httpClient.post(`${this.apiUrlCart}/add`, id);
   }
 
   removeOneFromCart(id: string) {
-    return this.httpClient.post(`${this.apiUrl}/cart/remove`, id);
+    return this.httpClient.post(`${this.apiUrlCart}/remove`, id);
   }
 
   removeProduct(id: string): Observable<any> {
-    return this.httpClient.delete(`${this.apiUrl}/cart/${id}`);
+    return this.httpClient.delete(`${this.apiUrlCart}/${id}`);
   }
 
   clearCart(): Observable<any> {
-    return this.httpClient.delete(`${this.apiUrl}/cart`);
+    return this.httpClient.delete(`${this.apiUrlCart}`);
   }
 
-  checkout(): Observable<{order: CustomerDto}> {
-    return this.httpClient.get<{order: CustomerDto}>(`${this.apiUrlPayment}/summary`);
-  }
-
-  getTotalPrice(): Observable<{totalPrice: number}> {
-    return this.httpClient.get<{totalPrice: number}>(`${this.apiUrl}/cart/totalPrice`);
+  checkout(): Observable<CustomerDto> {
+    return this.httpClient.get<CustomerDto>(`${this.apiUrlOrder}/summary`);
   }
 
   cancelPayment(): Observable<any> {
-    return this.httpClient.delete(`${this.apiUrlPayment}/cancel`);
+    return this.httpClient.delete(`${this.apiUrlOrder}/cancel`);
   }
 
   sendRequest(id: string, imgElement: HTMLImageElement) {
@@ -119,23 +116,23 @@ export class StoreService {
   }
 
   validCart() {
-    return this.httpClient.get<{response: any}>(`${this.apiUrl}/cart/valid`);
+    return this.httpClient.get<{response: any}>(`${this.apiUrlCart}/valid`);
   }
 
-  goToPayment(customer: CustomerDto): Observable<{url: string}> {
-    return this.httpClient.post<{url: string}>(`${this.apiUrlPayment}/create`, customer);
+  goToPayment(customer: CustomerDto): Observable<PaymentLink> {
+    return this.httpClient.post<PaymentLink>(`${this.apiUrlPayment}/create`, customer);
   }
 
-  goToRepayment(orderId: string): Observable<{url: string}> {
-    return this.httpClient.post<{url: string}>(`${this.apiUrlPayment}/repay`, orderId);
+  goToRepayment(orderId: string): Observable<PaymentLink> {
+    return this.httpClient.post<PaymentLink>(`${this.apiUrlPayment}/repay`, orderId);
   }
 
-  getUserOrders(): Observable<{orders: OrderBaseInfo[]}> {
-    return this.httpClient.get<{orders: OrderBaseInfo[]}>(`${this.apiUrlOrder}`);
+  getUserOrders(): Observable<OrderBaseInfo[]> {
+    return this.httpClient.get<OrderBaseInfo[]>(`${this.apiUrlOrder}`);
   }
 
   getOrderById(orderId: string) {
-    return this.httpClient.get<{order: Order}>(`${this.apiUrlOrder}/${orderId}`);
+    return this.httpClient.get<Order>(`${this.apiUrlOrder}/${orderId}`);
   }
 
   rateProduct(rating: OrderRatingProduct) {

@@ -33,6 +33,7 @@ yarn-error.log
 .sass-cache/
 /connect.lock
 /coverage
+src/enviroments/env.ts
 /libpeerconnection.log
 testem.log
 /typings

@@ -51,9 +51,6 @@ export class HomeComponent implements OnInit {
             });
           }
         }, 100);
-      },
-      error: (error) => {
-        console.error('Error fetching featured products:', error);
       }
     });
   }

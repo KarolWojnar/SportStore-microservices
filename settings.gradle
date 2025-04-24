@@ -1,0 +1,5 @@
+rootProject.name = "webshop-microservices"
+
+include("common-module")
+include("auth-service")
+include("notification-service")

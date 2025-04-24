@@ -72,10 +72,7 @@ export class RegisterComponent {
       },
       error: (err) => {
         this.isLoading = false;
-        if (err.error.details?.passwordMatching) {
-          this.registerForm.setErrors({ passwordMismatch: true });
-        }
-        this.errorMessage = err.error.details.email.toString() || 'Registration failed. Please try again.';
+        this.errorMessage = err.error.message;
       },
     });
   }

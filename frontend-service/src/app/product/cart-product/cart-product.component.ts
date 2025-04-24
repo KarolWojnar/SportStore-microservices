@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { Product } from '../../model/product';
+import { ProductDetails } from '../../model/product';
 import { CurrencyPipe, NgForOf, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { StoreService } from '../../service/store.service';
@@ -19,7 +19,7 @@ import { HighlightPipe } from '../../service/highlightPipe';
   styleUrl: './cart-product.component.scss'
 })
 export class CartProductComponent {
-  @Input() product!: Product;
+  @Input() product!: ProductDetails;
   @Input() isLoggedIn!: boolean;
   @Input() search!: string;
 

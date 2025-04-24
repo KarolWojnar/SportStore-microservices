@@ -34,7 +34,7 @@ export class OrdersComponent implements OnInit {
   ngOnInit(): void {
     this.storeService.getUserOrders().subscribe({
       next: (response) => {
-        this.orders = response.orders;
+        this.orders = response;
         this.isLoading = false;
       },
       error: (err) => {
@@ -75,8 +75,7 @@ export class OrdersComponent implements OnInit {
             window.location.href = response.url;
           }
         },
-        error: (err) => {
-          console.error('Error updating customer:', err);
+        error: () => {
           this.payingId = 'XX';
           this.isLoadingPayment = false;
           this.errorMessage = 'An error occurred while processing payment. Try again later.';

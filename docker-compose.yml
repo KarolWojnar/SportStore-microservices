@@ -1,54 +1,19 @@
 services:
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.4
     container_name: zookeeper
     environment:
+      ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
     healthcheck:
-      test: [ "CMD-SHELL", "echo stat | nc 127.0.0.1 2181 | grep Mode" ]
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 | grep 'Mode: ' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - store-network
-
-  kafka:
-    image: confluentinc/cp-kafka:7.4.4
-    depends_on:
-      - zookeeper
-    container_name: kafka
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-    healthcheck:
-      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list" ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-    networks:
-      - store-network
-
-  api-gateway:
-    container_name: api-gateway
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
-    env_file:
-      - /api-gateway/.env
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_REDIS_HOST: redis
-    depends_on:
-      - redis
+      start_period: 60s
     networks:
       - store-network
 
@@ -59,25 +24,44 @@ services:
     container_name: frontend-service
     ports:
       - '4200:4200'
-    volumes:
-      - ./frontend-service:/app
     networks:
       - store-network
 
-  customer-service:
-    container_name: customer-service
-    build:
-      context: ./customer-service
-      dockerfile: Dockerfile
+  product-db:
+    image: 'mongo:8.0.6'
+    container_name: product-db
+    environment:
+      - 'MONGO_INITDB_DATABASE=productDB'
+      - 'MONGO_INITDB_ROOT_PASSWORD=root'
+      - 'MONGO_INITDB_ROOT_USERNAME=root'
     ports:
-      - "8081:8080"
-    env_file:
-      - /customer-service/.env
-    depends_on:
-      customer-db:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      - '27017:27017'
+    volumes:
+      - product_db_data:/data/db
+      - ./product-service/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    networks:
+      - store-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ping:1})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-db:
+    image: mysql:8.3.0
+    container_name: order-db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: order_db
+    volumes:
+      - order_db_data:/var/lib/mysql
+    ports:
+      - "3308:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
     networks:
       - store-network
 
@@ -88,7 +72,7 @@ services:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: customer_db
     volumes:
-      - customer-db-data:/var/lib/mysql
+      - customer_db_data:/var/lib/mysql
     ports:
       - "3306:3306"
     healthcheck:
@@ -99,13 +83,49 @@ services:
     networks:
       - store-network
 
-  redis:
-    container_name: redis
+  user-db:
+    image: mysql:8.3.0
+    container_name: user-db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: user_db
+    volumes:
+      - user_db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - store-network
+
+  payment-db:
+    image: mysql:8.3.0
+    container_name: payment-db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: payment_db
+    volumes:
+      - payment_db_data:/var/lib/mysql
+    ports:
+      - "3309:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - store-network
+
+  redis-auth:
+    container_name: redis-auth
     image: redis:7.4.2-alpine
     ports:
       - '6379:6379'
     volumes:
-      - redis-data:/data
+      - redis_auth_data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -114,10 +134,289 @@ services:
     networks:
       - store-network
 
+  redis-cart:
+    container_name: redis-cart
+    image: redis:7.4.2-alpine
+    ports:
+      - '6380:6379'
+    volumes:
+      - redis_cart_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - store-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.4
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    networks:
+      - store-network
+
+  eureka-server:
+    container_name: eureka-server
+    build:
+      context: ./eureka
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: "curl --fail --silent localhost:8761/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - store-network
+
+  file-storage-service:
+    container_name: file-storage-service
+    build:
+      context: ./file-storage-service
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8080"
+    volumes:
+      - ./file-storage-service/uploads:/app/uploads
+      - ./file-storage-service/src/main/resources/static:/app/src/main/resources/static
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - store-network
+
+  customer-service:
+    container_name: customer-service
+    build:
+      context: ./customer-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      customer-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - store-network
+
+  notification-service:
+    container_name: notification-service
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8085:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - store-network
+
+  product-service:
+    container_name: product-service
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      product-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - store-network
+
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8083:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      user-db:
+        condition: service_healthy
+      redis-auth:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - store-network
+
+  cart-service:
+    container_name: cart-service
+    build:
+      context: ./cart-service
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      redis-cart:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - store-network
+
+  payment-service:
+    container_name: payment-service
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8087:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      payment-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - store-network
+
+  order-service:
+    container_name: order-service
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8088:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      order-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - store-network
+
+  stripe-cli:
+    image: stripe/stripe-cli:v1.26.1
+    container_name: stripe-cli
+    command: listen --forward-to http://api-gateway:8080/api/payment/webhook
+    volumes:
+      - stripe-cli-config:/root/.config/stripe
+    networks:
+      - store-network
+
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      customer-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+      file-storage-service:
+        condition: service_healthy
+    networks:
+      - store-network
+
 volumes:
-  customer-db-data:
-  redis-data:
+  customer_db_data:
+  user_db_data:
+  order_db_data:
+  payment_db_data:
+  redis_cart_data:
+  redis_auth_data:
+  product_db_data:
+  stripe-cli-config:
 
 networks:
   store-network:
     driver: bridge
+    name: store-network

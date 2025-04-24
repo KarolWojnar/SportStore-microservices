@@ -2,8 +2,16 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/customer.main.iml" filepath="$PROJECT_DIR$/.idea/modules/customer.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/webshop-microservices.iml" filepath="$PROJECT_DIR$/webshop-microservices.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/api-gateway.main.iml" filepath="$PROJECT_DIR$/.idea/modules/api-gateway.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/auth-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/auth-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/cart-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/cart-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/customer-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/customer-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/files.main.iml" filepath="$PROJECT_DIR$/.idea/modules/files.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/notification-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/notification-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/order-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/order-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/product-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/product-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/auth-service/webshop-microservices.auth-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/auth-service/webshop-microservices.auth-service.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/notification-service/webshop-microservices.notification-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/notification-service/webshop-microservices.notification-service.main.iml" />
     </modules>
   </component>
 </project>

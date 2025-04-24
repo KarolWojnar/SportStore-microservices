@@ -2,25 +2,103 @@ server:
   port: 8080
 
 spring:
+  webflux:
+    static-path-pattern: /**
+  main:
+    allow-bean-definition-overriding: true
   application:
     name: api-gateway
   cloud:
+    loadbalancer:
+      retry:
+        enabled: true
+        max-retries-on-next-service-instance: 2
+        max-retries-on-same-service-instance: 1
     gateway:
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+        add-to-simple-url-handler-mapping: true
       routes:
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          filters:
+            - name: AuthenticationFilter
+              args: {}
+          predicates:
+            - Path=/api/auth/**
+
         - id: customer-service
           uri: lb://CUSTOMER-SERVICE
           predicates:
             - Path=/api/customers/**
           filters:
-            - name: CircuitBreaker
-              args:
-                name: customerService
-                fallbackUri: forward:/fallback/customer
-  data:
-    redis:
-      host: redis
-      port: 6379
+            - name: AuthenticationFilter
+              args: {}
+
+        - id: product-service
+          uri: lb://PRODUCT-SERVICE
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - name: AuthenticationFilter
+              args: {}
+
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: AuthenticationFilter
+              args: { }
+
+        - id: payment-service
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/api/payment/**
+          filters:
+            - name: AuthenticationFilter
+              args: { }
+
+        - id: cart-service
+          uri: lb://CART-SERVICE
+          predicates:
+            - Path=/api/cart/**
+          filters:
+            - name: AuthenticationFilter
+              args: { }
+
+        - id: file-storage-service
+          uri: lb://file-storage-service
+          predicates:
+            - Path=/images/**
+          filters:
+            - RewritePath=/images/(?<segment>.*), /api/files/$\{segment}
+
+        - id: file-storage-service
+          uri: lb://file-storage-service
+          predicates:
+            - Path=/uploads/**
+          filters:
+            - RewritePath=/uploads/(?<segment>.*), /api/files/$\{segment}
+  web:
+    resources:
+      add-mappings: true
+      static-locations: classpath:/static/
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true

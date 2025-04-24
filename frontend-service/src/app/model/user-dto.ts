@@ -1,6 +1,9 @@
 export interface UserDto extends UserLoginDto{
   confirmPassword?: string;
   firstName?: string;
+  lastName?: string;
+  shippingAddress?: ShippingAddress | null;
+  role?: string;
 }
 
 export interface UserLoginDto {
@@ -24,12 +27,27 @@ export interface ShippingAddress {
   country: string;
 }
 
+export interface UserStatus {
+  userStatus: boolean;
+}
+
+export interface UserLoginStatus {
+  isLoggedIn: boolean;
+  role: string;
+}
+
 export interface UserDetails extends CustomerDetails {
   id: string;
   email: string;
   role: string;
   enabled: boolean;
 }
+
+export enum UserRole {
+  ROLE_CUSTOMER,
+  ROLE_ADMIN
+}
+
 
 export interface CustomerDetails {
   firstName?: string;

@@ -1,6 +1,6 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 import { StoreService } from '../service/store.service';
-import { Product } from '../model/product';
+import { ProductDetails } from '../model/product';
 import { RouterModule } from '@angular/router';
 import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 import { FormsModule } from '@angular/forms';
@@ -17,9 +17,9 @@ import { MatSliderModule } from '@angular/material/slider';
   templateUrl: './product.component.html',
   styleUrl: './product.component.scss'
 })
-export class ProductComponent implements AfterViewInit, OnInit {
+export class ProductComponent implements AfterViewInit {
 
-  products: Product[] = [];
+  products: ProductDetails[] = [];
   page = 1;
   pageSize = 6;
   totalElements = 0;
@@ -39,11 +39,6 @@ export class ProductComponent implements AfterViewInit, OnInit {
 
   constructor(private storeService: StoreService) {}
 
-  ngOnInit(): void {
-    this.loadCategories();
-    this.loadMaxPrice();
-  }
-
   ngAfterViewInit(): void {
     this.getProducts();
   }
@@ -60,6 +55,13 @@ export class ProductComponent implements AfterViewInit, OnInit {
       this.selectedCategories
     ).subscribe(products => {
       this.products = products.products;
+      if (products.categories.length > 0) {
+        this.allCategories = products.categories;
+      }
+      if (this.maxPriceFromData == 9999) {
+        this.maxPriceFromData = Math.floor(products.maxPrice + 1);
+        this.maxPrice = this.maxPriceFromData;
+      }
       this.totalElements = products.totalElements;
     });
   }
@@ -94,12 +96,6 @@ export class ProductComponent implements AfterViewInit, OnInit {
     this.getProducts();
   }
 
-  loadCategories(): void {
-    this.storeService.getCategories().subscribe(categories => {
-      this.allCategories = categories.categories;
-    });
-  }
-
   clearCategoryFilters() {
     this.selectedCategories = [];
     this.getProducts();
@@ -114,14 +110,6 @@ export class ProductComponent implements AfterViewInit, OnInit {
       this.selectedCategories.splice(index, 1);
     }
     this.getProducts();
-  }
-
-  loadMaxPrice() {
-    this.storeService.getMaxPrice().subscribe(maxPrice => {
-      maxPrice.maxPrice = Math.round(maxPrice.maxPrice);
-      this.maxPriceFromData = maxPrice.maxPrice + 1;
-      this.maxPrice = this.maxPriceFromData;
-    });
   }
 
   protected readonly faTrashRestore = faTrashRestore;

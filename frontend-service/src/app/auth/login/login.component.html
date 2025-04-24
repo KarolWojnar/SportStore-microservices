@@ -1,3 +1,4 @@
+<script src="https://apis.google.com/js/platform.js" async defer></script>
 <div class="container d-flex justify-content-center align-items-center mt-5">
   <div class="p-4 shadow-lg  rounded-2" style="max-width: 600px; width: 100%">
     <div *ngIf="successMessage" class="alert alert-success mt-3">
@@ -42,7 +43,17 @@
 
       </div>
 
-      <button type="submit" class="btn btn-primary w-100" [disabled]="loginForm.invalid">Login</button>
+      <div class="d-flex justify-content-center align-items-center gap-4">
+        <button type="submit" class="btn btn-primary w-100" [disabled]="loginForm.invalid">Login</button>
+        <asl-google-signin-button
+          type="standard"
+          shape="pill"
+          theme="filled_blue"
+          text="signin_with"
+          size="large"
+          logo_alignment="left">
+        </asl-google-signin-button>
+      </div>
 
       <p class="text-center mt-3">
         Don't have an account? <a routerLink="/register">Register here</a>

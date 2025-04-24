@@ -104,7 +104,7 @@ export class OrdersComponent implements OnInit, AfterViewInit, OnDestroy {
           return;
         }
         this.errorMessage = 'Failed to load orders. Please try again later.';
-        console.error('Error loading orders:', error);
+        console.error('Error loading orders');
       },
       complete: () => {
         this.isLoading = false;
@@ -173,8 +173,8 @@ export class OrdersComponent implements OnInit, AfterViewInit, OnDestroy {
             order.status = 'ANNULLED';
           }
         },
-        error: (error) => {
-          console.error('Error cancelling order:', error);
+        error: () => {
+          console.error('Error cancelling order');
           this.errorMessage = 'Failed to cancel order. Please try again.';
         }
       });
