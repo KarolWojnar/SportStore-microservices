@@ -49,6 +49,20 @@ export const environment = {
 };
 ```
 
+## 🔐 Stripe CLI Authentication (first-time setup)
+When you run the Stripe CLI for the first time (e.g. via Docker), you will see a login prompt like this in your terminal:
+```bash
+You have not configured API keys yet. Running `stripe login`...
+Your pairing code is: relent-hot-glad-liking
+To authenticate with Stripe, please go to: https://dashboard.stripe.com/stripecli/confirm_auth?t=...
+Waiting for confirmation...
+```
+1. Click the link shown in the logs to complete authentication in your browser.
+2. Once confirmed, the CLI will be ready to use.
+3. This authentication is valid for 90 days. 
+
+⚠️ Note: If the container is stopped or rebuilt and the configuration is not persisted, you may need to authenticate again by repeating the above steps.
+
 ## 🚀 Running the Project
 1. Clone the repository:
 ```bash
