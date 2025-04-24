@@ -53,6 +53,8 @@ public class Order {
         this.totalPrice = price;
         this.paymentMethod = paymentMethod;
         this.status = OrderStatus.CREATED;
+        this.orderDate = Date.from(java.time.Instant.now());
+        this.lastModified = Date.from(java.time.Instant.now());
     }
 
     public void setNewStatus(OrderStatus status) {

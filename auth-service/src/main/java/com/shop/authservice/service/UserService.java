@@ -77,15 +77,18 @@ public class UserService {
         return getCredentials(token, refreshToken, user.getId(), response);
     }
 
-
-    @Transactional
     public Map<String, Object> loginSuccessGoogle(Map<String, String> tokenGoogle, HttpServletResponse response) {
         String idToken = tokenGoogle.get("idToken");
         String email = jwtUtil.getEmailFromGoogleToken(idToken);
-        User user = userRepository.findByEmail(email).orElse(createGoogleUser(email));
-        String refreshToken = jwtUtil.generateToken(user, refreshExp);
-        String token = jwtUtil.generateToken(user, exp);
-        return getCredentials(token, refreshToken, user.getId(), response);
+        log.info("Google email: {}", email);
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isEmpty()) {
+            user = Optional.of(createGoogleUser(email));
+        }
+        log.info("Google user: {}", user.get().getEmail());
+        String refreshToken = jwtUtil.generateToken(user.orElse(null), refreshExp);
+        String token = jwtUtil.generateToken(user.orElse(null), exp);
+        return getCredentials(token, refreshToken, user.get().getId(), response);
     }
 
 
